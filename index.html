@@ -1534,7 +1534,7 @@
 
         <div style="display: flex; gap: 10px; padding: 0 16px 10px;">
           <${StatTile} label="Current" value=${streak} unit=${streak === 1 ? 'day' : 'days'} color="var(--orange)" delta=${streak > 0 ? '🔥 on fire' : 'start today'} deltaColor="var(--orange)"/>
-          <${StatTile} label="Longest" value=${longest} unit=${longest === 1 ? 'day' : 'days'} color="var(--pink)" delta=${longest > 0 ? 'personal best' : 'let\\'s go'} deltaColor="var(--text-mid)"/>
+          <${StatTile} label="Longest" value=${longest} unit=${longest === 1 ? 'day' : 'days'} color="var(--pink)" delta=${longest > 0 ? 'personal best' : "let's go"} deltaColor="var(--text-mid)"/>
         </div>
         <div style="display: flex; gap: 10px; padding: 0 16px;">
           <${StatTile} label="Perfect days" value=${perfectCount()} color="var(--cyan)" delta="all time" deltaColor="var(--text-mid)"/>

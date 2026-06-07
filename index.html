@@ -10,9 +10,8 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" href="icon-192.png">
-  <title>CalorieTracker</title>
+  <title>Quick Macros</title>
   <style>
-    /* ─── Miami Vice tokens ────────────────────────────────────────────── */
     :root {
       --pink:    #FF1493;
       --cyan:    #00E5FF;
@@ -22,652 +21,347 @@
       --surface2:#222748;
       --orange:  #FF6B35;
       --green:   #39FF14;
-      --yellow:  #FFD60A;
-
-      --text-hi:  #FFFFFF;
-      --text-mid: rgba(255,255,255,0.72);
-      --text-low: rgba(255,255,255,0.42);
-      --text-dim: rgba(255,255,255,0.26);
-
       --hairline:  rgba(255,255,255,0.08);
       --hairline2: rgba(255,255,255,0.14);
-
-      --g-neon:   linear-gradient(90deg, var(--pink), var(--purple));
-      --g-cyan:   linear-gradient(135deg, var(--cyan), var(--purple));
-      --g-sunset: linear-gradient(90deg, var(--pink), var(--orange));
-      --g-flame:  linear-gradient(0deg, var(--pink), var(--orange) 55%, var(--yellow));
-
+      --g-neon: linear-gradient(90deg, var(--pink), var(--purple));
       --safe-bottom: env(safe-area-inset-bottom, 0px);
       --safe-top: env(safe-area-inset-top, 0px);
     }
-
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
-    body {
+    html, body {
+      margin: 0; padding: 0; height: 100%;
       background: var(--navy);
-      color: var(--text-hi);
+      color: white;
       font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
-      font-size: 15px;
       -webkit-font-smoothing: antialiased;
       overscroll-behavior: none;
-      user-select: none;
-      -webkit-user-select: none;
     }
-    button { font-family: inherit; cursor: pointer; }
-    input, textarea { font-family: inherit; }
-
-    /* ─── Layout ───────────────────────────────────────────────────────── */
-    #root { position: fixed; inset: 0; display: flex; flex-direction: column; }
-    .screen {
-      flex: 1;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
+    body {
       padding-top: var(--safe-top);
-      padding-bottom: calc(86px + var(--safe-bottom));
+      padding-bottom: var(--safe-bottom);
     }
-    .screen.no-tabbar { padding-bottom: var(--safe-bottom); }
+    button, input { font-family: inherit; }
+    button { cursor: pointer; border: none; background: none; color: inherit; }
 
-    .stack-v { display: flex; flex-direction: column; }
-    .stack-h { display: flex; flex-direction: row; align-items: center; }
+    .app {
+      min-height: 100vh;
+      padding: 18px 18px calc(20px + var(--safe-bottom));
+      display: flex; flex-direction: column;
+      max-width: 520px; margin: 0 auto;
+    }
 
-    /* ─── Typography ───────────────────────────────────────────────────── */
-    .large-title {
-      font-size: 32px;
-      font-weight: 800;
-      letter-spacing: -0.5px;
-      color: var(--text-hi);
+    /* Header */
+    .header { margin-bottom: 18px; }
+    .title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
+    .date {
+      font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--cyan);
+      text-shadow: 0 0 8px rgba(0,229,255,0.6);
+      margin-top: 4px; text-transform: uppercase;
     }
-    .subtitle {
-      font-size: 13px;
-      color: var(--text-mid);
-      margin-top: 4px;
-    }
-    .sec-label {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-    .num { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
 
-    /* ─── Common components ───────────────────────────────────────────── */
-    .glass {
-      background: var(--surface);
-      border-radius: 20px;
-      border: 0.5px solid var(--hairline2);
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25), 0 0 20px rgba(176,0,255,0.12);
-      padding: 16px;
-    }
-    .glass-flush { padding: 0; }
-    .glass-raised {
+    /* Totals */
+    .totals {
       background: linear-gradient(135deg, var(--surface), var(--surface2));
-    }
-    .neon-cta {
-      width: 100%;
-      height: 52px;
-      border-radius: 26px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: var(--g-neon);
-      color: white;
-      font-size: 17px;
-      font-weight: 700;
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px;
-      box-shadow: 0 0 18px rgba(255,20,147,0.55), 0 6px 32px rgba(255,20,147,0.3);
-      transition: transform .12s;
-    }
-    .neon-cta:active { transform: scale(0.98); }
-    .neon-cta:disabled { opacity: 0.5; }
-    .pill {
-      height: 30px;
-      padding: 0 12px;
-      border-radius: 15px;
-      display: inline-flex; align-items: center; gap: 4px;
-      font-size: 13px; font-weight: 600;
-      border: 0.5px solid;
-      background: transparent;
-    }
-    .pink-seal {
-      display: inline-flex; align-items: center; justify-content: center;
-      background: var(--g-neon);
-      color: white;
-      border-radius: 50%;
-      font-weight: 900;
-      box-shadow: 0 0 6px rgba(255,20,147,0.7);
-    }
-
-    /* ─── Tab bar ─────────────────────────────────────────────────────── */
-    .tab-bar {
-      position: absolute; left: 0; right: 0; bottom: 0;
-      padding: 10px 8px calc(8px + var(--safe-bottom));
-      display: flex;
-      background: rgba(10,14,39,0.65);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-top: 0.5px solid var(--hairline);
-      z-index: 50;
-    }
-    .tab {
-      flex: 1;
-      background: transparent; border: none;
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
-      color: var(--text-low);
-      transition: color .15s;
-      padding: 4px 0;
-    }
-    .tab.active { color: var(--pink); filter: drop-shadow(0 0 10px rgba(255,20,147,0.7)); }
-    .tab svg { width: 22px; height: 22px; }
-    .tab-label { font-size: 10px; font-weight: 600; }
-
-    /* ─── Diary ──────────────────────────────────────────────────────── */
-    .date-pill {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(255,255,255,0.06);
       border: 0.5px solid var(--hairline2);
-      color: var(--cyan);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 800;
+      border-radius: 22px;
+      padding: 18px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 28px rgba(255,20,147,0.15);
     }
-    .date-pill:disabled { opacity: 0.35; }
-
-    .ring { position: relative; }
-    .ring svg { display: block; transform: rotate(-90deg); }
-    .ring .center {
-      position: absolute; inset: 0;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      gap: 2px;
+    .totals .cal-big {
+      text-align: center;
+      font-size: 56px; font-weight: 800; letter-spacing: -1.5px;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-variant-numeric: tabular-nums;
+      color: white;
+      text-shadow: 0 0 20px rgba(255,20,147,0.6);
+      line-height: 1;
     }
-    .ring .label-top { font-size: 11px; font-weight: 700; letter-spacing: 2px; }
-    .ring .num-big { font-size: 44px; font-weight: 800; letter-spacing: -0.5px; color: white;
-                     text-shadow: 0 0 14px rgba(255,20,147,0.5); }
-    .ring .frac { font-size: 11px; color: var(--text-low); }
-
-    .macro-bar { display: flex; flex-direction: column; gap: 6px; }
-    .macro-bar .header { display: flex; align-items: center; gap: 8px; }
-    .macro-bar .dot { width: 8px; height: 8px; border-radius: 50%; }
-    .macro-bar .label { font-size: 11px; font-weight: 700; letter-spacing: 1.5px;
-                        text-transform: uppercase; color: var(--text-mid); flex: 1; }
-    .macro-bar .nums { font-size: 13px; }
-    .macro-bar .nums .cur { color: white; font-weight: 700; }
-    .macro-bar .nums .goal { color: var(--text-low); }
-    .macro-bar .track { height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); position: relative; overflow: hidden; }
-    .macro-bar .fill { position: absolute; left: 0; top: 0; height: 100%; border-radius: 3px; }
-
-    .meal-card { margin: 0 16px 14px; }
-    .meal-header { display: flex; align-items: center; padding: 14px 16px 10px; }
-    .meal-icon {
-      width: 28px; height: 28px; border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      margin-right: 10px;
+    .totals .cal-label {
+      text-align: center;
+      font-size: 11px; font-weight: 700; letter-spacing: 3px;
+      color: var(--pink); text-transform: uppercase;
+      text-shadow: 0 0 6px rgba(255,20,147,0.5);
+      margin-top: 6px;
     }
-    .meal-name { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
-    .meal-kcal { font-size: 11px; color: var(--text-low); margin-top: 1px; }
-    .meal-row {
-      display: flex; align-items: center; padding: 11px 16px;
-      border-top: 0.5px solid var(--hairline);
+    .macros-row {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px; margin-top: 18px;
     }
-    .meal-row:active { background: rgba(255,255,255,0.04); }
-    .meal-row .name { font-size: 15px; font-weight: 500; flex: 1; min-width: 0;
-                      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .meal-row .sub { font-size: 12px; color: var(--text-low); margin-top: 2px; }
-    .meal-row .cal { font-family: ui-monospace, monospace; font-size: 15px; font-weight: 600;
-                     color: white; margin-left: 12px; }
-
-    .empty-cta {
-      margin: 4px 14px 14px;
-      padding: 14px 16px;
-      border-radius: 14px;
-      display: flex; align-items: center; gap: 10px;
-      font-size: 13px; font-weight: 500;
-      cursor: pointer;
-    }
-
-    /* ─── Search ─────────────────────────────────────────────────────── */
-    .search-bar {
-      margin: 0 16px;
-      height: 50px;
-      border-radius: 25px;
-      background: var(--surface);
-      border: 1px solid rgba(0,229,255,0.5);
-      box-shadow: 0 0 16px rgba(0,229,255,0.3);
-      display: flex; align-items: center;
-      padding: 0 16px;
-      gap: 10px;
-    }
-    .search-bar input {
-      flex: 1; background: transparent; border: none; outline: none;
-      color: white; font-size: 16px;
-    }
-    .search-bar input::placeholder { color: var(--text-low); }
-    .barcode-btn {
-      width: 36px; height: 36px; border-radius: 50%;
-      background: rgba(255,20,147,0.12);
-      border: 0.5px solid rgba(255,20,147,0.5);
-      color: var(--pink);
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 10px rgba(255,20,147,0.5);
-    }
-    .pill-tabs {
-      margin: 12px 16px;
-      padding: 3px;
-      height: 36px;
-      background: rgba(255,255,255,0.04);
-      border-radius: 18px;
+    .macro {
+      background: rgba(0,0,0,0.25);
       border: 0.5px solid var(--hairline);
-      display: flex;
+      border-radius: 14px;
+      padding: 10px 8px;
+      text-align: center;
     }
-    .pill-tab {
-      flex: 1;
-      height: 30px;
-      border-radius: 15px;
-      background: transparent; border: none;
-      font-size: 13px; font-weight: 600;
-      color: var(--text-mid);
+    .macro .v {
+      font-size: 22px; font-weight: 700;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-variant-numeric: tabular-nums;
     }
-    .pill-tab.active {
-      background: var(--g-neon);
-      color: white;
-      box-shadow: 0 0 12px rgba(255,20,147,0.4);
+    .macro .l {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+      text-transform: uppercase; margin-top: 2px;
     }
-    .top-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-      padding: 0 16px;
-    }
-    .top-card {
-      position: relative;
-      height: 110px;
+    .macro.p .v { color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.5); }
+    .macro.p .l { color: var(--cyan); }
+    .macro.c .v { color: var(--orange); text-shadow: 0 0 6px rgba(255,107,53,0.5); }
+    .macro.c .l { color: var(--orange); }
+    .macro.f .v { color: var(--purple); text-shadow: 0 0 6px rgba(176,0,255,0.5); }
+    .macro.f .l { color: var(--purple); }
+
+    /* Input card */
+    .input-card {
       background: var(--surface);
-      border-radius: 16px;
       border: 0.5px solid var(--hairline2);
-      padding: 12px;
-      display: flex; flex-direction: column; justify-content: space-between;
+      border-radius: 22px;
+      padding: 14px;
+      margin-bottom: 16px;
+    }
+    .input-card .sec {
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: var(--cyan); text-transform: uppercase;
+      text-shadow: 0 0 6px rgba(0,229,255,0.5);
+      margin-bottom: 10px;
+    }
+    .fields {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .field {
+      background: rgba(0,0,0,0.4);
+      border: 0.5px solid var(--hairline2);
+      border-radius: 12px;
+      padding: 8px 12px;
+      display: flex; flex-direction: column;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .field:focus-within {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 1px var(--cyan), 0 0 10px rgba(0,229,255,0.4);
+    }
+    .field .label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.55); text-transform: uppercase;
+    }
+    .field input {
+      background: transparent; border: none; outline: none; padding: 4px 0 0;
+      color: white; font-size: 22px; font-weight: 600;
+      font-family: ui-monospace, "SF Mono", monospace;
+      font-variant-numeric: tabular-nums;
+      width: 100%; -webkit-appearance: none;
+    }
+    .field input::-webkit-inner-spin-button,
+    .field input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .field.k input { color: var(--pink); }
+    .field.p input { color: var(--cyan); }
+    .field.c input { color: var(--orange); }
+    .field.f input { color: var(--purple); }
+
+    .log-btn {
+      width: 100%; height: 52px; border-radius: 26px;
+      background: var(--g-neon); color: white;
+      font-size: 17px; font-weight: 800; letter-spacing: 0.5px;
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,0.25);
+      box-shadow: 0 0 18px rgba(255,20,147,0.55), 0 6px 24px rgba(255,20,147,0.3);
+      transition: transform .12s, opacity .15s;
+    }
+    .log-btn:active { transform: scale(0.98); }
+    .log-btn:disabled { opacity: 0.4; box-shadow: none; }
+
+    /* Entries list */
+    .entries {
+      background: var(--surface);
+      border: 0.5px solid var(--hairline2);
+      border-radius: 22px;
       overflow: hidden;
     }
-    .top-card .count-badge {
-      align-self: flex-start;
-      padding: 0 8px; height: 22px;
-      border-radius: 11px;
-      display: flex; align-items: center;
-      font-size: 11px; font-weight: 700; letter-spacing: 0.4px;
+    .entries .sec {
+      padding: 14px 16px 10px;
+      font-size: 11px; font-weight: 700; letter-spacing: 2px;
+      color: var(--purple); text-transform: uppercase;
+      text-shadow: 0 0 6px rgba(176,0,255,0.5);
+      display: flex; align-items: baseline; justify-content: space-between;
+    }
+    .entries .sec .count {
+      font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0;
       font-family: ui-monospace, monospace;
     }
-    .top-card .name { font-size: 13px; font-weight: 600; line-height: 1.25;
-                      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .top-card .kcal { font-size: 11px; color: var(--text-low); margin-top: 4px; font-family: ui-monospace, monospace; }
-    .top-card .streak {
-      position: absolute; top: 0; right: 0; width: 60px; height: 60px; pointer-events: none;
+    .entry {
+      display: flex; align-items: center; padding: 12px 16px;
+      border-top: 0.5px solid var(--hairline);
     }
-
-    .result-row { padding: 12px 16px; border-top: 0.5px solid var(--hairline);
-                  display: flex; align-items: center; gap: 12px; }
-    .result-row:first-child { border-top: none; }
-    .result-row:active { background: rgba(255,255,255,0.04); }
-    .result-row .info { flex: 1; min-width: 0; }
-    .result-row .name { font-size: 15px; font-weight: 500; color: white;
-                        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .result-row .sub { font-size: 12px; color: var(--text-low); margin-top: 3px; }
-    .result-row .kcal { text-align: right; }
-    .result-row .kcal-n { font-family: ui-monospace, monospace; font-size: 17px; font-weight: 700;
-                          color: var(--cyan); text-shadow: 0 0 8px rgba(0,229,255,0.5); line-height: 1; }
-    .result-row .kcal-l { font-family: ui-monospace, monospace; font-size: 10px; color: var(--text-low);
-                          margin-top: 3px; letter-spacing: 0.5px; }
-    .add-btn {
-      width: 32px; height: 32px; border-radius: 50%;
-      background: var(--g-neon); border: none; color: white;
+    .entry:active { background: rgba(255,255,255,0.04); }
+    .entry .time {
+      font-size: 11px; color: rgba(255,255,255,0.45);
+      width: 56px; font-family: ui-monospace, monospace;
+    }
+    .entry .vals {
+      flex: 1; display: flex; gap: 10px; flex-wrap: wrap;
+      font-family: ui-monospace, monospace;
+      font-size: 13px;
+    }
+    .entry .vals .kcal { color: white; font-weight: 700; }
+    .entry .vals .px { color: var(--cyan); }
+    .entry .vals .cx { color: var(--orange); }
+    .entry .vals .fx { color: var(--purple); }
+    .entry .del {
+      width: 30px; height: 30px; border-radius: 50%;
+      color: rgba(255,255,255,0.3); font-size: 18px;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 12px rgba(255,20,147,0.55);
     }
-    .add-btn:active { transform: scale(0.94); }
-
-    /* ─── Mobility ───────────────────────────────────────────────────── */
-    .streak-card {
-      margin: 0 16px 18px;
-      padding: 20px;
-      border-radius: 22px;
-      background: linear-gradient(135deg, var(--surface), var(--surface2));
-      border: 0.5px solid var(--hairline2);
-      display: flex; align-items: center; gap: 16px;
-      box-shadow: 0 12px 32px rgba(255,107,53,0.18), 0 0 32px rgba(255,20,147,0.18);
-      position: relative; overflow: hidden;
-    }
-    .flame {
-      width: 64px; height: 64px;
-      background: var(--g-flame);
-      -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 C 18 7 25 9 25 17 C 25 24 21 29 16 29 C 11 29 7 25 7 18 C 7 15 10 13 11 11 C 12 14 14 14 14 11 C 14 7 15 5 16 2 Z'/></svg>") center / contain no-repeat;
-              mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><path d='M16 2 C 18 7 25 9 25 17 C 25 24 21 29 16 29 C 11 29 7 25 7 18 C 7 15 10 13 11 11 C 12 14 14 14 14 11 C 14 7 15 5 16 2 Z'/></svg>") center / contain no-repeat;
-      filter: drop-shadow(0 0 14px rgba(255,107,53,0.7));
-    }
-    .task-card {
-      margin: 0 16px 10px;
-      padding: 14px 16px;
-      border-radius: 18px;
-      display: flex; align-items: center; gap: 14px;
-      transition: all .25s;
-      cursor: pointer;
-    }
-    .task-tile {
-      width: 50px; height: 50px; border-radius: 14px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .check-circle {
-      width: 32px; height: 32px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .week-dot {
-      width: 14px; height: 14px; border-radius: 50%;
+    .entry .del:active { color: var(--pink); background: rgba(255,20,147,0.15); }
+    .empty {
+      padding: 24px; text-align: center;
+      font-size: 13px; color: rgba(255,255,255,0.4);
     }
 
-    /* ─── Stat tiles ─────────────────────────────────────────────────── */
-    .stat-tile {
-      flex: 1;
-      padding: 14px;
-      background: var(--surface);
-      border-radius: 20px;
-      border: 0.5px solid var(--hairline2);
+    /* Footer */
+    .footer {
+      margin-top: 14px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; color: rgba(255,255,255,0.35);
     }
-    .stat-tile .label { font-size: 11px; font-weight: 700; letter-spacing: 1.6px;
-                        text-transform: uppercase; }
-    .stat-tile .value { font-size: 28px; font-weight: 700; color: white;
-                        margin-top: 8px; letter-spacing: -0.5px; font-family: ui-monospace, monospace; }
-    .stat-tile .unit { font-size: 12px; color: var(--text-low); font-family: ui-monospace, monospace; }
-    .stat-tile .delta { font-family: ui-monospace, monospace; font-size: 12px; font-weight: 600; margin-top: 6px; }
+    .footer .link {
+      color: rgba(255,255,255,0.55);
+      padding: 6px 10px; border-radius: 10px;
+    }
+    .footer .link:active { background: rgba(255,255,255,0.06); }
 
-    /* ─── Sheets / overlays ──────────────────────────────────────────── */
-    .sheet-backdrop {
+    /* Goals modal */
+    .modal-backdrop {
       position: fixed; inset: 0; z-index: 100;
       background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      animation: fadeIn 0.2s;
-    }
-    .sheet {
-      position: fixed; left: 0; right: 0; bottom: 0; top: 60px;
-      background: linear-gradient(180deg, var(--surface2) 0%, var(--navy) 80%);
-      border-top-left-radius: 28px; border-top-right-radius: 28px;
-      border-top: 0.5px solid var(--hairline2);
-      box-shadow: 0 -20px 60px rgba(0,0,0,0.6);
-      z-index: 101;
-      display: flex; flex-direction: column;
-      overflow: hidden;
-      animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .drag-handle {
-      align-self: center;
-      width: 40px; height: 5px; border-radius: 3px;
-      background: rgba(255,255,255,0.25);
-      margin: 10px 0 6px;
+      backdrop-filter: blur(6px);
+      display: flex; align-items: center; justify-content: center;
+      animation: fadeIn .2s;
     }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-    .pill-field {
-      flex: 1;
-      height: 44px; border-radius: 12px;
-      background: rgba(0,0,0,0.35);
+    .modal {
+      width: calc(100% - 40px); max-width: 360px;
+      background: var(--surface2);
       border: 0.5px solid var(--hairline2);
-      padding: 0 12px;
-      display: flex; flex-direction: column; justify-content: center;
+      border-radius: 22px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
-    .pill-field .lbl { font-size: 9px; font-weight: 700; letter-spacing: 1.4px;
-                       text-transform: uppercase; color: var(--text-low); }
-    .pill-field input {
-      background: transparent; border: none; outline: none; padding: 0;
-      color: var(--cyan); font-size: 15px; font-weight: 600;
+    .modal h2 { margin: 0 0 14px; font-size: 19px; font-weight: 700; }
+    .modal .row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0;
+    }
+    .modal .row label { flex: 1; font-size: 14px; }
+    .modal .row input {
+      width: 96px; height: 40px; border-radius: 10px;
+      background: rgba(0,0,0,0.4); border: 0.5px solid var(--hairline2);
+      color: white; padding: 0 10px; font-size: 16px;
       font-family: ui-monospace, monospace;
-      text-shadow: 0 0 6px rgba(0,229,255,0.6);
-      width: 100%;
+      outline: none; -webkit-appearance: none;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+    .modal-actions button {
+      flex: 1; height: 44px; border-radius: 22px;
+      font-size: 15px; font-weight: 600;
+    }
+    .modal-actions .cancel { background: rgba(255,255,255,0.08); }
+    .modal-actions .confirm {
+      background: var(--g-neon);
+      box-shadow: 0 0 14px rgba(255,20,147,0.5);
     }
 
-    /* ─── Toast ──────────────────────────────────────────────────────── */
+    /* Toast */
     .toast {
-      position: fixed; left: 50%; bottom: 100px; transform: translateX(-50%);
-      padding: 12px 18px;
+      position: fixed; left: 50%; bottom: 30px; transform: translateX(-50%);
+      padding: 10px 16px;
       background: rgba(0,0,0,0.85);
       backdrop-filter: blur(10px);
       border: 0.5px solid var(--hairline2);
       border-radius: 14px;
-      color: white; font-size: 14px; font-weight: 600;
+      color: white; font-size: 13px; font-weight: 600;
       z-index: 200;
-      box-shadow: 0 0 18px rgba(255,20,147,0.4);
-      animation: toastIn 0.3s, toastOut 0.3s 1.8s forwards;
+      box-shadow: 0 0 14px rgba(255,20,147,0.4);
+      animation: toastIn .25s, toastOut .25s 1.6s forwards;
     }
-    @keyframes toastIn  { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
+    @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
     @keyframes toastOut { to { opacity: 0; transform: translate(-50%, 20px); } }
-
-    /* ─── Road House ─────────────────────────────────────────────────── */
-    .roadhouse {
-      position: fixed; inset: 0; z-index: 300;
-      background: radial-gradient(circle at center, rgba(10,14,39,0.9), rgba(10,14,39,0.98));
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      animation: fadeIn 0.3s;
-    }
-    .roadhouse .stamp {
-      width: 160px; height: 160px;
-      background: var(--g-neon);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; font-weight: 900; letter-spacing: 2px; color: white;
-      box-shadow: 0 0 60px rgba(255,20,147,0.7), inset 0 0 0 4px rgba(255,255,255,0.4);
-      animation: stampIn 0.5s cubic-bezier(0.16, 1, 0.5, 1);
-    }
-    .roadhouse .title {
-      font-size: 48px; font-weight: 900; letter-spacing: 4px;
-      margin-top: 30px;
-      background: var(--g-neon);
-      -webkit-background-clip: text; background-clip: text; color: transparent;
-      filter: drop-shadow(0 0 16px rgba(255,20,147,0.7));
-      animation: stampIn 0.5s 0.15s both;
-    }
-    .roadhouse .sub {
-      font-size: 12px; font-weight: 700; letter-spacing: 4px;
-      color: var(--cyan); margin-top: 12px;
-      text-shadow: 0 0 10px rgba(0,229,255,0.7);
-      animation: stampIn 0.5s 0.25s both;
-    }
-    @keyframes stampIn { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-
-    /* ─── Charts ─────────────────────────────────────────────────────── */
-    .chart-card { padding: 14px; margin: 0 16px 14px; }
-    .chart-card .head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
-    .chart-card .val { font-size: 32px; font-weight: 700; letter-spacing: -0.6px; color: white;
-                       font-family: ui-monospace, monospace; }
-    .chart-card .lbl { font-size: 13px; color: var(--text-low); font-family: ui-monospace, monospace; }
-    .chart-card .delta { font-family: ui-monospace, monospace; font-size: 13px; font-weight: 700; }
-
-    /* ─── Settings ──────────────────────────────────────────────────── */
-    .nav-cell { display: flex; align-items: center; padding: 13px 16px;
-                border-top: 0.5px solid var(--hairline); cursor: pointer; }
-    .nav-cell:first-child { border-top: none; }
-    .nav-cell:active { background: rgba(255,255,255,0.04); }
-    .nav-cell-icon { width: 30px; height: 30px; border-radius: 8px;
-                     display: flex; align-items: center; justify-content: center; margin-right: 12px; }
-    .nav-cell .title { flex: 1; font-size: 16px; font-weight: 500; }
-    .nav-cell .detail { font-size: 13px; color: var(--text-low); margin-right: 8px;
-                        font-family: ui-monospace, monospace; }
-
-    /* ─── Modal / dialog ─────────────────────────────────────────────── */
-    .modal-backdrop {
-      position: fixed; inset: 0; z-index: 150;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(6px);
-      display: flex; align-items: center; justify-content: center;
-      animation: fadeIn 0.2s;
-    }
-    .modal {
-      width: calc(100% - 48px); max-width: 360px;
-      padding: 22px;
-      background: var(--surface2);
-      border: 0.5px solid var(--hairline2);
-      border-radius: 22px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-    }
-    .modal h2 { margin: 0 0 10px; font-size: 19px; font-weight: 700; }
-    .modal .body { font-size: 14px; color: var(--text-mid); margin-bottom: 16px; }
-    .modal input {
-      width: 100%; height: 44px; border-radius: 12px;
-      background: rgba(0,0,0,0.4); border: 0.5px solid var(--hairline2);
-      padding: 0 14px; color: white; font-size: 16px;
-      outline: none;
-    }
-    .modal input:focus { border-color: var(--cyan); box-shadow: 0 0 0 1px var(--cyan); }
-    .modal-actions { display: flex; gap: 10px; margin-top: 14px; }
-    .modal-actions button {
-      flex: 1; height: 44px; border-radius: 22px; border: none;
-      font-size: 15px; font-weight: 600;
-    }
-    .modal-actions .cancel { background: rgba(255,255,255,0.08); color: white; }
-    .modal-actions .confirm {
-      background: var(--g-neon); color: white;
-      box-shadow: 0 0 14px rgba(255,20,147,0.5);
-    }
-
-    /* ─── Barcode scanner ────────────────────────────────────────────── */
-    .scanner {
-      position: fixed; inset: 0; z-index: 200;
-      background: black;
-    }
-    .scanner video {
-      width: 100%; height: 100%; object-fit: cover;
-    }
-    .scanner .frame {
-      position: absolute; top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      width: 280px; height: 180px;
-      border: 1.5px solid rgba(0,229,255,0.6);
-      border-radius: 20px;
-      box-shadow: 0 0 24px rgba(0,229,255,0.5), inset 0 0 24px rgba(0,229,255,0.2);
-    }
-    .scanner .corner {
-      position: absolute;
-      width: 28px; height: 28px;
-      border: 3px solid var(--pink);
-      filter: drop-shadow(0 0 6px var(--pink));
-    }
-    .scanner .corner.tl { top: -3px; left: -3px; border-right: none; border-bottom: none; border-top-left-radius: 4px; }
-    .scanner .corner.tr { top: -3px; right: -3px; border-left: none; border-bottom: none; border-top-right-radius: 4px; }
-    .scanner .corner.bl { bottom: -3px; left: -3px; border-right: none; border-top: none; border-bottom-left-radius: 4px; }
-    .scanner .corner.br { bottom: -3px; right: -3px; border-left: none; border-top: none; border-bottom-right-radius: 4px; }
-    .scanner .laser {
-      position: absolute; left: 12px; right: 12px; top: 50%;
-      height: 2px; background: var(--pink);
-      box-shadow: 0 0 12px var(--pink), 0 0 24px var(--pink);
-      animation: lasr 2s linear infinite;
-    }
-    @keyframes lasr {
-      0% { top: 18%; } 50% { top: 82%; } 100% { top: 18%; }
-    }
-    .scanner-controls {
-      position: absolute; top: calc(60px + var(--safe-top)); left: 0; right: 0;
-      padding: 0 20px;
-      display: flex; justify-content: space-between;
-    }
-    .scanner-pill {
-      height: 36px; padding: 0 14px; border-radius: 18px;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(12px);
-      border: 0.5px solid var(--hairline2);
-      display: flex; align-items: center; gap: 6px;
-      font-size: 13px; font-weight: 600;
-    }
-    .scanner-caption {
-      position: absolute; bottom: 110px; left: 0; right: 0; text-align: center;
-    }
-    .scanner-caption .title { font-size: 22px; font-weight: 700; color: white;
-                              text-shadow: 0 0 12px rgba(0,229,255,0.7); }
-    .scanner-caption .helper { font-size: 13px; color: var(--text-mid); margin-top: 6px; }
-
-    /* small */
-    .right-tap { -webkit-user-select: none; user-select: none; }
-    .clickable { cursor: pointer; }
-    .clickable:active { opacity: 0.7; }
-
-    /* No-scroll body when sheet open */
-    body.no-scroll { overflow: hidden; }
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div class="app">
+    <div class="header">
+      <div class="title">Today</div>
+      <div class="date" id="date"></div>
+    </div>
 
-  <script type="module">
-    import { h, render, Fragment } from 'https://esm.sh/preact@10.22.1';
-    import { useState, useEffect, useMemo, useRef, useCallback } from 'https://esm.sh/preact@10.22.1/hooks';
-    import htm from 'https://esm.sh/htm@3.1.1';
+    <div class="totals">
+      <div class="cal-big" id="t-cal">0</div>
+      <div class="cal-label">kcal</div>
+      <div class="macros-row">
+        <div class="macro p"><div class="v" id="t-p">0</div><div class="l">Protein</div></div>
+        <div class="macro c"><div class="v" id="t-c">0</div><div class="l">Carbs</div></div>
+        <div class="macro f"><div class="v" id="t-f">0</div><div class="l">Fat</div></div>
+      </div>
+      <div id="goal-line" style="margin-top: 14px; text-align: center; font-size: 11px; color: rgba(255,255,255,0.5); font-family: ui-monospace, monospace;"></div>
+    </div>
 
-    const html = htm.bind(h);
-    const USDA_API_KEY = 'm3ZpfIyecOGpWk7sZRpZ2IZ2N9sM90LX6nN4amVV';
+    <div class="input-card">
+      <div class="sec">● Add entry</div>
+      <div class="fields">
+        <label class="field k">
+          <span class="label">Calories</span>
+          <input id="i-cal" type="number" inputmode="decimal" placeholder="0" enterkeyhint="next"/>
+        </label>
+        <label class="field p">
+          <span class="label">Protein (g)</span>
+          <input id="i-p" type="number" inputmode="decimal" placeholder="0" enterkeyhint="next"/>
+        </label>
+        <label class="field c">
+          <span class="label">Carbs (g)</span>
+          <input id="i-c" type="number" inputmode="decimal" placeholder="0" enterkeyhint="next"/>
+        </label>
+        <label class="field f">
+          <span class="label">Fat (g)</span>
+          <input id="i-f" type="number" inputmode="decimal" placeholder="0" enterkeyhint="done"/>
+        </label>
+      </div>
+      <button class="log-btn" id="log-btn" disabled>Log entry</button>
+    </div>
 
-    /* ─────────────────────────────────────────────────────────────────
-       DATA LAYER — localStorage + a tiny pub-sub
-       ───────────────────────────────────────────────────────────────── */
-    const STORAGE_KEY = 'ct-pwa-v1';
+    <div class="entries">
+      <div class="sec"><span>● Today's entries</span><span class="count" id="entry-count"></span></div>
+      <div id="entries-list"></div>
+    </div>
 
-    const defaultState = () => ({
-      user: {
-        name: 'You',
-        weightUnit: 'lb',
-        dailyCalorieGoal: 2400,
-        proteinGoal: 170,
-        carbsGoal: 240,
-        fatGoal: 80,
-        currentWeight: null,
-        targetWeight: null,
-      },
-      meals: [],           // MealEntry[]
-      weights: [],         // WeightEntry[]
-      mobility: {},        // { 'YYYY-MM-DD': { pullups, pushups, squats, mobility } }
-      recipes: [],
-      customFoods: [],
-    });
+    <div class="footer">
+      <button class="link" id="goals-btn">Edit goals</button>
+      <button class="link" id="reset-btn">Clear day</button>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    const STORAGE = 'qm-pwa-v1';
+    const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
 
     function loadState() {
       try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        return { ...defaultState(), ...parsed, user: { ...defaultState().user, ...(parsed.user || {}) } };
-      } catch (e) {
-        return defaultState();
+        const raw = JSON.parse(localStorage.getItem(STORAGE) || '{}');
+        return {
+          entries: Array.isArray(raw.entries) ? raw.entries : [],
+          goals: raw.goals || { cal: 2400, p: 170, c: 240, f: 80 },
+        };
+      } catch {
+        return { entries: [], goals: { cal: 2400, p: 170, c: 240, f: 80 } };
       }
     }
+    function save() { localStorage.setItem(STORAGE, JSON.stringify(state)); }
 
-    function saveState(s) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
-    }
-
-    const listeners = new Set();
     let state = loadState();
-    function getState() { return state; }
-    function setState(updater) {
-      state = typeof updater === 'function' ? updater(state) : updater;
-      saveState(state);
-      listeners.forEach(fn => fn(state));
-    }
-    function useStore(selector = s => s) {
-      const [, force] = useState(0);
-      useEffect(() => {
-        const fn = () => force(n => n + 1);
-        listeners.add(fn);
-        return () => listeners.delete(fn);
-      }, []);
-      return selector(state);
-    }
 
-    /* ─────────────────────────────────────────────────────────────────
-       UTILITIES
-       ───────────────────────────────────────────────────────────────── */
-    function dateKey(d) { return d.toISOString().slice(0, 10); }
-    function today() { return new Date(); }
-    function todayKey() { return dateKey(today()); }
-    function fmtNum(n) { return Math.round(n).toLocaleString('en-US'); }
-    function uuid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
-
-    function haptic(kind = 'light') {
-      // Web has limited haptics. iOS supports vibrate via mediaSession on PWA install.
-      if (!navigator.vibrate) return;
-      const pattern = { light: 8, medium: 14, heavy: 25, success: [12, 30, 14] }[kind] || 10;
-      try { navigator.vibrate(pattern); } catch {}
+    function vibrate(p = 10) {
+      try { navigator.vibrate && navigator.vibrate(p); } catch {}
     }
 
     function showToast(text) {
@@ -675,1680 +369,204 @@
       el.className = 'toast';
       el.textContent = text;
       document.body.appendChild(el);
-      setTimeout(() => el.remove(), 2200);
+      setTimeout(() => el.remove(), 2000);
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       MEAL helpers
-       ───────────────────────────────────────────────────────────────── */
-    const MEALS = [
-      { id: 'breakfast', name: 'Breakfast', icon: '☀', color: 'var(--yellow)', emptyCopy: 'Start strong — eggs, oats, or a quick smoothie.' },
-      { id: 'lunch',     name: 'Lunch',     icon: '◐', color: 'var(--green)',  emptyCopy: 'Something protein-forward keeps the afternoon honest.' },
-      { id: 'dinner',    name: 'Dinner',    icon: '◑', color: 'var(--pink)',   emptyCopy: 'Plate it up — protein, veg, a smart starch.' },
-      { id: 'snacks',    name: 'Snacks',    icon: '✦', color: 'var(--cyan)',   emptyCopy: 'Crush something small — almonds, jerky, a clementine.' },
-    ];
-    const MEAL_BY_ID = Object.fromEntries(MEALS.map(m => [m.id, m]));
-
-    function entriesForDay(meals, dKey, mealId) {
-      return meals.filter(m => m.date === dKey && (!mealId || m.mealType === mealId));
+    function todayEntries() {
+      const k = dayKey();
+      return state.entries.filter(e => e.day === k).sort((a, b) => b.ts - a.ts);
     }
-    function totalsForDay(meals, dKey) {
+
+    function totalsForToday() {
       let cal = 0, p = 0, c = 0, f = 0;
-      for (const m of meals) {
-        if (m.date !== dKey) continue;
-        cal += m.calories || 0;
-        p += m.protein || 0;
-        c += m.carbs || 0;
-        f += m.fat || 0;
+      for (const e of todayEntries()) {
+        cal += e.cal || 0; p += e.p || 0; c += e.c || 0; f += e.f || 0;
       }
       return { cal, p, c, f };
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       CURATED FOODS — same nutrition as Swift version
-       ───────────────────────────────────────────────────────────────── */
-    const CURATED = [
-      { name:'Egg, large', aliases:['egg','eggs','large egg','whole egg'], size:50, unit:'g', serving:'1 large egg', cal:72, p:6.3, c:0.4, f:4.8 },
-      { name:'Egg white, large', aliases:['egg white','egg whites'], size:33, unit:'g', serving:'1 large white', cal:17, p:3.6, c:0.2, f:0.1 },
-      { name:'Whole milk', aliases:['milk','whole milk'], size:244, unit:'g', serving:'1 cup', cal:149, p:7.7, c:11.7, f:8.0 },
-      { name:'2% milk', aliases:['2% milk','reduced fat milk'], size:244, unit:'g', serving:'1 cup', cal:122, p:8.1, c:11.7, f:4.8 },
-      { name:'Skim milk', aliases:['skim milk','nonfat milk','fat free milk'], size:245, unit:'g', serving:'1 cup', cal:83, p:8.3, c:12.2, f:0.2 },
-      { name:'Almond milk, unsweetened', aliases:['almond milk'], size:240, unit:'g', serving:'1 cup', cal:30, p:1.0, c:1.0, f:2.5 },
-      { name:'Greek yogurt, plain nonfat', aliases:['greek yogurt','yogurt','plain greek yogurt'], size:170, unit:'g', serving:'1 container (170g)', cal:100, p:17.0, c:6.0, f:0.7 },
-      { name:'Cheddar cheese', aliases:['cheddar','cheese','cheddar cheese'], size:28, unit:'g', serving:'1 oz', cal:113, p:7.0, c:0.4, f:9.3 },
-      { name:'Mozzarella, part-skim', aliases:['mozzarella','mozzarella cheese'], size:28, unit:'g', serving:'1 oz', cal:85, p:7.0, c:1.0, f:6.0 },
-      { name:'Cottage cheese, low fat', aliases:['cottage cheese'], size:113, unit:'g', serving:'½ cup', cal:90, p:12.0, c:5.0, f:2.5 },
-      { name:'Butter', aliases:['butter'], size:14, unit:'g', serving:'1 tbsp', cal:102, p:0.1, c:0, f:11.5 },
-      { name:'Banana, medium', aliases:['banana','bananas'], size:118, unit:'g', serving:'1 medium', cal:105, p:1.3, c:27.0, f:0.4 },
-      { name:'Apple, medium', aliases:['apple','apples'], size:182, unit:'g', serving:'1 medium', cal:95, p:0.5, c:25.0, f:0.3 },
-      { name:'Orange, medium', aliases:['orange','oranges'], size:131, unit:'g', serving:'1 medium', cal:62, p:1.2, c:15.4, f:0.2 },
-      { name:'Strawberries', aliases:['strawberry','strawberries'], size:152, unit:'g', serving:'1 cup', cal:49, p:1.0, c:11.7, f:0.5 },
-      { name:'Blueberries', aliases:['blueberry','blueberries'], size:148, unit:'g', serving:'1 cup', cal:84, p:1.1, c:21.4, f:0.5 },
-      { name:'Avocado', aliases:['avocado','avocados'], size:150, unit:'g', serving:'1 medium', cal:240, p:3.0, c:12.8, f:22.0 },
-      { name:'Chicken breast, cooked', aliases:['chicken breast','chicken','grilled chicken'], size:113, unit:'g', serving:'4 oz cooked', cal:187, p:35.0, c:0, f:4.0 },
-      { name:'Ground beef, 85/15 cooked', aliases:['ground beef','hamburger','beef'], size:113, unit:'g', serving:'4 oz cooked', cal:250, p:26.0, c:0, f:16.0 },
-      { name:'Ground turkey, 93/7 cooked', aliases:['ground turkey','turkey'], size:113, unit:'g', serving:'4 oz cooked', cal:170, p:24.0, c:0, f:8.0 },
-      { name:'Salmon, cooked', aliases:['salmon'], size:113, unit:'g', serving:'4 oz cooked', cal:233, p:25.0, c:0, f:14.0 },
-      { name:'Tuna, canned in water', aliases:['tuna','canned tuna'], size:142, unit:'g', serving:'1 can drained', cal:142, p:32.0, c:0, f:1.0 },
-      { name:'Bacon, cooked', aliases:['bacon'], size:8, unit:'g', serving:'1 slice', cal:43, p:3.0, c:0, f:3.3 },
-      { name:'Shrimp, cooked', aliases:['shrimp'], size:85, unit:'g', serving:'3 oz', cal:84, p:18.0, c:0, f:1.0 },
-      { name:'Almonds', aliases:['almond','almonds'], size:28, unit:'g', serving:'1 oz (~23 nuts)', cal:164, p:6.0, c:6.0, f:14.0 },
-      { name:'Peanut butter', aliases:['peanut butter'], size:32, unit:'g', serving:'2 tbsp', cal:188, p:7.0, c:6.0, f:16.0 },
-      { name:'Walnuts', aliases:['walnut','walnuts'], size:28, unit:'g', serving:'1 oz', cal:185, p:4.3, c:3.9, f:18.5 },
-      { name:'Brown rice, cooked', aliases:['brown rice','rice'], size:195, unit:'g', serving:'1 cup cooked', cal:216, p:5.0, c:45.0, f:1.8 },
-      { name:'White rice, cooked', aliases:['white rice','jasmine rice'], size:158, unit:'g', serving:'1 cup cooked', cal:205, p:4.3, c:45.0, f:0.4 },
-      { name:'Oatmeal, cooked', aliases:['oatmeal','oats','rolled oats'], size:234, unit:'g', serving:'1 cup cooked', cal:166, p:5.9, c:28.0, f:3.6 },
-      { name:'Whole wheat bread', aliases:['bread','whole wheat bread','wheat bread'], size:28, unit:'g', serving:'1 slice', cal:69, p:3.6, c:12.0, f:1.0 },
-      { name:'Bagel, plain', aliases:['bagel'], size:99, unit:'g', serving:'1 medium', cal:277, p:11.0, c:55.0, f:1.7 },
-      { name:'Pasta, cooked', aliases:['pasta','spaghetti','penne'], size:140, unit:'g', serving:'1 cup cooked', cal:220, p:8.0, c:43.0, f:1.3 },
-      { name:'Quinoa, cooked', aliases:['quinoa'], size:185, unit:'g', serving:'1 cup cooked', cal:222, p:8.0, c:39.0, f:3.6 },
-      { name:'Sweet potato, baked', aliases:['sweet potato'], size:130, unit:'g', serving:'1 medium', cal:112, p:2.0, c:26.0, f:0.1 },
-      { name:'Potato, baked', aliases:['potato','baked potato'], size:173, unit:'g', serving:'1 medium', cal:161, p:4.3, c:37.0, f:0.2 },
-      { name:'Broccoli, cooked', aliases:['broccoli'], size:91, unit:'g', serving:'1 cup', cal:31, p:2.6, c:6.0, f:0.4 },
-      { name:'Spinach, raw', aliases:['spinach'], size:30, unit:'g', serving:'1 cup', cal:7, p:0.9, c:1.1, f:0.1 },
-      { name:'Olive oil', aliases:['olive oil'], size:14, unit:'g', serving:'1 tbsp', cal:119, p:0, c:0, f:13.5 },
-      { name:'Hummus', aliases:['hummus'], size:30, unit:'g', serving:'2 tbsp', cal:70, p:2.0, c:4.0, f:5.0 },
-      { name:'Black beans, cooked', aliases:['black beans'], size:172, unit:'g', serving:'1 cup', cal:227, p:15.0, c:41.0, f:0.9 },
-    ];
+    function fmt(n) {
+      if (n == null || isNaN(n)) return '0';
+      // Show ints as ints, decimals to 1 place
+      return (Math.round(n * 10) / 10).toString();
+    }
 
-    function searchCurated(query) {
-      const q = query.toLowerCase().trim();
-      if (!q) return [];
-      const matches = [];
-      for (const food of CURATED) {
-        for (const a of food.aliases) {
-          if (a === q || a.startsWith(q) || q.startsWith(a)) { matches.push(food); break; }
+    function fmtTime(ts) {
+      const d = new Date(ts);
+      return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    }
+
+    function dateLabel() {
+      const d = new Date();
+      const w = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      return `● ${w.toUpperCase()}`;
+    }
+
+    function render() {
+      document.getElementById('date').textContent = dateLabel();
+
+      const t = totalsForToday();
+      document.getElementById('t-cal').textContent = Math.round(t.cal).toLocaleString();
+      document.getElementById('t-p').textContent = fmt(t.p);
+      document.getElementById('t-c').textContent = fmt(t.c);
+      document.getElementById('t-f').textContent = fmt(t.f);
+
+      const g = state.goals;
+      const remaining = g.cal - t.cal;
+      const goalLine = document.getElementById('goal-line');
+      if (remaining > 0) goalLine.textContent = `${remaining.toLocaleString()} kcal to goal (${g.cal.toLocaleString()})`;
+      else if (remaining === 0) goalLine.textContent = `at goal (${g.cal.toLocaleString()})`;
+      else goalLine.textContent = `${Math.abs(remaining).toLocaleString()} over goal (${g.cal.toLocaleString()})`;
+
+      const entries = todayEntries();
+      const list = document.getElementById('entries-list');
+      list.innerHTML = '';
+      document.getElementById('entry-count').textContent = entries.length
+        ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}` : '';
+
+      if (entries.length === 0) {
+        list.innerHTML = '<div class="empty">No entries yet. Log your first above.</div>';
+      } else {
+        for (const e of entries) {
+          const row = document.createElement('div');
+          row.className = 'entry';
+          row.innerHTML = `
+            <div class="time">${fmtTime(e.ts)}</div>
+            <div class="vals">
+              <span class="kcal">${Math.round(e.cal || 0)} kcal</span>
+              ${e.p ? `<span class="px">${fmt(e.p)}p</span>` : ''}
+              ${e.c ? `<span class="cx">${fmt(e.c)}c</span>` : ''}
+              ${e.f ? `<span class="fx">${fmt(e.f)}f</span>` : ''}
+            </div>
+            <button class="del" data-id="${e.id}" aria-label="Delete">×</button>
+          `;
+          list.appendChild(row);
         }
-      }
-      return matches;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       API: USDA + Open Food Facts
-       ───────────────────────────────────────────────────────────────── */
-    async function searchUSDA(query, dataTypes = ['Branded','Foundation','SR Legacy'], pageSize = 20) {
-      const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=${pageSize}&dataType=${dataTypes.join(',')}`;
-      try {
-        const r = await fetch(url);
-        if (!r.ok) return [];
-        const j = await r.json();
-        return (j.foods || []).map(usdaToFood);
-      } catch { return []; }
-    }
-    function usdaToFood(f) {
-      const get = (id) => (f.foodNutrients || []).find(n => n.nutrientId === id)?.value || 0;
-      return {
-        id: 'usda-' + f.fdcId,
-        source: 'usda',
-        name: titleCase(f.description || ''),
-        brand: f.brandName || f.brandOwner || '',
-        size: f.servingSize || 100,
-        unit: f.servingSizeUnit || 'g',
-        per100: { cal: get(1008), p: get(1003), c: get(1005), f: get(1004) },
-        dataType: f.dataType || 'Branded',
-        upc: f.gtinUpc || null,
-      };
-    }
-    function titleCase(s) {
-      if (!s) return '';
-      return s.toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
-    }
-
-    async function lookupUPC(upc) {
-      // Try OFF first (better barcode coverage)
-      try {
-        const off = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(upc)}.json`).then(r => r.json());
-        if (off && off.status === 1 && off.product) {
-          const p = off.product;
-          const n = p.nutriments || {};
-          if ((n['energy-kcal_100g'] || 0) > 0) {
-            return {
-              id: 'off-' + upc,
-              source: 'off',
-              name: titleCase(p.product_name || p.product_name_en || 'Unknown'),
-              brand: p.brands || '',
-              size: parseFloat(p.serving_quantity) || 100,
-              unit: 'g',
-              per100: {
-                cal: n['energy-kcal_100g'] || 0,
-                p: n['proteins_100g'] || 0,
-                c: n['carbohydrates_100g'] || 0,
-                f: n['fat_100g'] || 0,
-              },
-              dataType: 'OFF',
-              upc,
-            };
-          }
-        }
-      } catch {}
-      // Fall back to USDA branded search by UPC
-      const usdaResults = await searchUSDA(upc, ['Branded'], 5);
-      if (usdaResults.length) {
-        const exact = usdaResults.find(f => f.upc === upc);
-        return exact || usdaResults[0];
-      }
-      return null;
-    }
-
-    function curatedToFood(c) {
-      return {
-        id: 'cur-' + c.name,
-        source: 'curated',
-        name: c.name,
-        brand: 'Common Foods',
-        size: c.size,
-        unit: c.unit,
-        per100: {
-          cal: c.cal * 100 / c.size,
-          p: c.p * 100 / c.size,
-          c: c.c * 100 / c.size,
-          f: c.f * 100 / c.size,
-        },
-        dataType: 'Curated',
-        upc: null,
-        serving: c.serving,
-      };
-    }
-
-    function scaledMacros(food, qty, size) {
-      const factor = (qty * size) / 100;
-      return {
-        cal: Math.round((food.per100.cal || 0) * factor),
-        p: (food.per100.p || 0) * factor,
-        c: (food.per100.c || 0) * factor,
-        f: (food.per100.f || 0) * factor,
-      };
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       MUTATIONS
-       ───────────────────────────────────────────────────────────────── */
-    function addMeal({ date, mealType, food, qty, size, unit, isApproved }) {
-      const m = scaledMacros(food, qty, size);
-      const entry = {
-        id: uuid(),
-        date,
-        mealType,
-        foodName: food.name,
-        brand: food.brand || '',
-        source: food.source,
-        upc: food.upc || null,
-        qty, size, unit,
-        calories: m.cal,
-        protein: m.p,
-        carbs: m.c,
-        fat: m.f,
-        isApproved: !!isApproved,
-        loggedAt: Date.now(),
-      };
-      setState(s => ({ ...s, meals: [...s.meals, entry] }));
-      haptic('success');
-      return entry;
-    }
-
-    function deleteMeal(id) {
-      setState(s => ({ ...s, meals: s.meals.filter(m => m.id !== id) }));
-      haptic('light');
-    }
-
-    function setMobility(date, task, val) {
-      setState(s => {
-        const day = s.mobility[date] || { pullups: false, pushups: false, squats: false, mobility: false };
-        const next = { ...day, [task]: val };
-        return { ...s, mobility: { ...s.mobility, [date]: next } };
-      });
-    }
-
-    function addWeight(weight) {
-      setState(s => ({
-        ...s,
-        weights: [...s.weights, { id: uuid(), date: todayKey(), weight, ts: Date.now() }],
-        user: { ...s.user, currentWeight: weight },
-      }));
-      haptic('success');
-    }
-    function deleteWeight(id) {
-      setState(s => ({ ...s, weights: s.weights.filter(w => w.id !== id) }));
-    }
-
-    function updateUser(patch) {
-      setState(s => ({ ...s, user: { ...s.user, ...patch } }));
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       LOG INDEX — frequency + last logged + approved
-       ───────────────────────────────────────────────────────────────── */
-    function buildLogIndex(meals) {
-      const idx = {};
-      for (const m of meals) {
-        const k = m.foodName.toLowerCase();
-        if (!idx[k]) {
-          idx[k] = { name: m.foodName, brand: m.brand, count: 0, last: 0, approved: false, sample: m };
-        }
-        idx[k].count++;
-        if (m.loggedAt > idx[k].last) {
-          idx[k].last = m.loggedAt;
-          idx[k].sample = m;
-        }
-        if (m.isApproved) idx[k].approved = true;
-      }
-      return idx;
-    }
-    function topLogged(idx, n = 6) {
-      return Object.values(idx).sort((a, b) => b.count - a.count || b.last - a.last).slice(0, n);
-    }
-    function recentLogged(idx, n = 6) {
-      return Object.values(idx).sort((a, b) => b.last - a.last).slice(0, n);
-    }
-    function logEntryToFood(e) {
-      const factor = (e.qty * e.size) / 100;
-      return {
-        id: 'log-' + e.id,
-        source: 'log',
-        name: e.foodName,
-        brand: e.brand,
-        size: e.size,
-        unit: e.unit,
-        per100: {
-          cal: e.calories / factor,
-          p: e.protein / factor,
-          c: e.carbs / factor,
-          f: e.fat / factor,
-        },
-        dataType: 'Recent',
-        upc: e.upc || null,
-        isApproved: e.isApproved,
-      };
-    }
-    function calorieDisplay(food) {
-      return Math.round((food.per100.cal || 0) * (food.size || 100) / 100);
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       ICONS — inline SVG components
-       ───────────────────────────────────────────────────────────────── */
-    function Icon({ name, size = 22, color = 'currentColor', stroke = 2 }) {
-      const paths = {
-        diary:   html`<path d="M7 4h11v16H7zM4 4h3v16H4z" stroke=${color} stroke-width=${stroke} stroke-linejoin="round" fill="none"/>`,
-        search:  html`<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke=${color} stroke-width=${stroke}/><line x1="15" y1="15" x2="20" y2="20" stroke=${color} stroke-width=${stroke} stroke-linecap="round"/>`,
-        progress:html`<polyline points="3,17 9,11 13,15 21,7" fill="none" stroke=${color} stroke-width=${stroke} stroke-linecap="round" stroke-linejoin="round"/>`,
-        mobility:html`<path d="M12 2a3 3 0 110 6 3 3 0 010-6zM6 12c1-3 3-4 6-4s5 1 6 4M9 21c0-5 1.5-7 3-7s3 2 3 7" stroke=${color} stroke-width=${stroke} fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
-        settings:html`<circle cx="12" cy="12" r="3" fill="none" stroke=${color} stroke-width=${stroke}/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3h.1a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8v.1a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" fill="none" stroke=${color} stroke-width=${stroke} stroke-linecap="round" stroke-linejoin="round"/>`,
-        chev_l:  html`<polyline points="15,5 8,12 15,19" fill="none" stroke=${color} stroke-width=${stroke + 0.4} stroke-linecap="round" stroke-linejoin="round"/>`,
-        chev_r:  html`<polyline points="9,5 16,12 9,19" fill="none" stroke=${color} stroke-width=${stroke + 0.4} stroke-linecap="round" stroke-linejoin="round"/>`,
-        plus:    html`<line x1="12" y1="4" x2="12" y2="20" stroke=${color} stroke-width=${stroke + 0.8} stroke-linecap="round"/><line x1="4" y1="12" x2="20" y2="12" stroke=${color} stroke-width=${stroke + 0.8} stroke-linecap="round"/>`,
-        minus:   html`<line x1="4" y1="12" x2="20" y2="12" stroke=${color} stroke-width=${stroke + 0.8} stroke-linecap="round"/>`,
-        check:   html`<polyline points="4,12 10,18 20,7" fill="none" stroke=${color} stroke-width=${stroke + 0.8} stroke-linecap="round" stroke-linejoin="round"/>`,
-        x:       html`<line x1="6" y1="6" x2="18" y2="18" stroke=${color} stroke-width=${stroke + 0.4} stroke-linecap="round"/><line x1="18" y1="6" x2="6" y2="18" stroke=${color} stroke-width=${stroke + 0.4} stroke-linecap="round"/>`,
-        barcode: html`<g stroke=${color} stroke-width="1.4"><line x1="4" y1="6" x2="4" y2="18"/><line x1="6" y1="6" x2="6" y2="18"/><line x1="9" y1="6" x2="9" y2="18" stroke-width="2"/><line x1="12" y1="6" x2="12" y2="18"/><line x1="14" y1="6" x2="14" y2="18" stroke-width="2"/><line x1="17" y1="6" x2="17" y2="18"/><line x1="20" y1="6" x2="20" y2="18" stroke-width="2"/></g>`,
-        flame:   html`<path d="M12 2c2 4 7 6 7 12a7 7 0 11-14 0c0-3 3-5 4-7 1 3 3 3 3 0 0-4 0-3 0-5z" fill=${color}/>`,
-        book:    html`<path d="M5 4h12a2 2 0 012 2v14H7a2 2 0 01-2-2V4z" fill="none" stroke=${color} stroke-width=${stroke}/><line x1="9" y1="8" x2="15" y2="8" stroke=${color} stroke-width=${stroke - 0.4} stroke-linecap="round"/><line x1="9" y1="12" x2="15" y2="12" stroke=${color} stroke-width=${stroke - 0.4} stroke-linecap="round"/>`,
-        trash:   html`<path d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2M7 7l1 13a2 2 0 002 2h4a2 2 0 002-2l1-13" fill="none" stroke=${color} stroke-width=${stroke} stroke-linecap="round" stroke-linejoin="round"/>`,
-        approved:html`<path d="M12 2l3 3 4-1-1 4 3 3-3 3 1 4-4-1-3 3-3-3-4 1 1-4-3-3 3-3-1-4 4 1z" fill=${color}/><polyline points="8,12 11,15 16,9" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`,
-      };
-      return html`<svg width=${size} height=${size} viewBox="0 0 24 24">${paths[name] || null}</svg>`;
-    }
-
-    function PinkSeal({ size = 14 }) {
-      return html`<span class="pink-seal" style=${{
-        width: size + 'px', height: size + 'px',
-        fontSize: (size * 0.55) + 'px',
-      }}>✓</span>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       APP — top-level router + sheets
-       ───────────────────────────────────────────────────────────────── */
-    function App() {
-      const [tab, setTab] = useState('diary');
-      const [addSheet, setAddSheet] = useState(null);    // { mealType }
-      const [detailSheet, setDetailSheet] = useState(null);  // { food, mealType, editing }
-      const [scannerOpen, setScannerOpen] = useState(false);
-      const [celebration, setCelebration] = useState(null);
-
-      const triggerCelebration = (food) => {
-        setCelebration(food);
-        setTimeout(() => setCelebration(null), 2800);
-      };
-
-      const openAddFood = (mealType) => {
-        haptic('light');
-        setAddSheet({ mealType });
-      };
-      const openDetail = (food, mealType, editing) => {
-        setDetailSheet({ food, mealType: mealType || addSheet?.mealType || 'snacks', editing: editing || null });
-      };
-      const onAddConfirm = (food, mealType, qty, size, unit, isApproved) => {
-        const entry = addMeal({ date: todayKey(), mealType, food, qty, size, unit, isApproved });
-        if (detailSheet?.editing) deleteMeal(detailSheet.editing.id);
-        if (isApproved) triggerCelebration(food);
-        setDetailSheet(null);
-        setAddSheet(null);
-        showToast(`Logged to ${MEAL_BY_ID[mealType].name}`);
-      };
-      const onQuickAdd = (food, mealType) => {
-        // Quick add with default serving
-        const entry = addMeal({
-          date: todayKey(), mealType: mealType || addSheet?.mealType || 'snacks',
-          food, qty: 1, size: food.size, unit: food.unit, isApproved: false
+        list.querySelectorAll('.del').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.dataset.id;
+            state.entries = state.entries.filter(e => e.id !== id);
+            save(); render(); vibrate(10);
+          });
         });
-        setAddSheet(null);
-        showToast(`Logged to ${MEAL_BY_ID[entry.mealType].name}`);
+      }
+    }
+
+    function parseField(id) {
+      const el = document.getElementById(id);
+      const v = parseFloat(el.value);
+      return isNaN(v) ? 0 : v;
+    }
+
+    function clearFields() {
+      ['i-cal', 'i-p', 'i-c', 'i-f'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('log-btn').disabled = true;
+      document.getElementById('i-cal').focus();
+    }
+
+    function updateLogBtn() {
+      const any = parseField('i-cal') > 0 || parseField('i-p') > 0 || parseField('i-c') > 0 || parseField('i-f') > 0;
+      document.getElementById('log-btn').disabled = !any;
+    }
+
+    function logEntry() {
+      const cal = parseField('i-cal');
+      const p = parseField('i-p');
+      const c = parseField('i-c');
+      const f = parseField('i-f');
+      if (cal === 0 && p === 0 && c === 0 && f === 0) return;
+
+      // Auto-compute calories from macros if cal=0 but macros present (4/4/9)
+      const computedCal = cal > 0 ? cal : Math.round(p * 4 + c * 4 + f * 9);
+
+      const entry = {
+        id: Math.random().toString(36).slice(2) + Date.now().toString(36),
+        day: dayKey(),
+        ts: Date.now(),
+        cal: computedCal, p, c, f,
       };
-
-      return html`<${Fragment}>
-        ${tab === 'diary'    && html`<${Diary}    onAddFood=${openAddFood} onEdit=${openDetail} />`}
-        ${tab === 'search'   && html`<${Search}   onOpenFood=${openDetail} onOpenScanner=${() => setScannerOpen(true)} />`}
-        ${tab === 'progress' && html`<${Progress}/>`}
-        ${tab === 'mobility' && html`<${Mobility}/>`}
-        ${tab === 'settings' && html`<${Settings}/>`}
-
-        <${TabBar} active=${tab} onChange=${(t) => { haptic('light'); setTab(t); }} />
-
-        ${addSheet && html`<${AddFoodSheet}
-          mealType=${addSheet.mealType}
-          onClose=${() => setAddSheet(null)}
-          onOpenFood=${openDetail}
-          onQuickAdd=${onQuickAdd}
-          onOpenScanner=${() => setScannerOpen(true)}
-        />`}
-
-        ${detailSheet && html`<${FoodDetailSheet}
-          food=${detailSheet.food}
-          initialMeal=${detailSheet.mealType}
-          editing=${detailSheet.editing}
-          onClose=${() => setDetailSheet(null)}
-          onConfirm=${onAddConfirm}
-        />`}
-
-        ${scannerOpen && html`<${BarcodeScanner}
-          onClose=${() => setScannerOpen(false)}
-          onResult=${async (upc) => {
-            setScannerOpen(false);
-            showToast(`Looking up ${upc}…`);
-            const food = await lookupUPC(upc);
-            if (!food) { showToast(`Not found: ${upc}`); return; }
-            openDetail(food, addSheet?.mealType);
-          }}
-        />`}
-
-        ${celebration && html`<${RoadHouseCelebration} food=${celebration} />`}
-      </${Fragment}>`;
+      state.entries.push(entry);
+      save();
+      clearFields();
+      render();
+      vibrate([8, 30, 12]);
+      // Blur to dismiss keyboard
+      document.activeElement && document.activeElement.blur && document.activeElement.blur();
+      showToast(`Logged ${computedCal} kcal`);
     }
 
-    /* ─────────────────────────────────────────────────────────────────
-       TAB BAR
-       ───────────────────────────────────────────────────────────────── */
-    function TabBar({ active, onChange }) {
-      const tabs = [
-        { id: 'diary',    label: 'Diary' },
-        { id: 'search',   label: 'Search' },
-        { id: 'progress', label: 'Progress' },
-        { id: 'mobility', label: 'Mobility' },
-        { id: 'settings', label: 'Settings' },
-      ];
-      return html`<nav class="tab-bar">
-        ${tabs.map(t => html`
-          <button class=${'tab ' + (active === t.id ? 'active' : '')} onClick=${() => onChange(t.id)}>
-            <${Icon} name=${t.id} size=${22} />
-            <span class="tab-label">${t.label}</span>
-          </button>`)}
-      </nav>`;
-    }
+    // Wire up inputs
+    ['i-cal', 'i-p', 'i-c', 'i-f'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', updateLogBtn);
+    });
 
-    /* ─────────────────────────────────────────────────────────────────
-       DIARY
-       ───────────────────────────────────────────────────────────────── */
-    function Diary({ onAddFood, onEdit }) {
-      const s = useStore();
-      const [date, setDate] = useState(today());
-      const dKey = dateKey(date);
-      const totals = totalsForDay(s.meals, dKey);
-      const goal = s.user.dailyCalorieGoal || 2000;
-      const remaining = goal - totals.cal;
-      const isToday = dKey === todayKey();
-      const isFuture = date > today();
+    // Enter on last field logs
+    document.getElementById('i-f').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); logEntry(); }
+    });
 
-      const subtitle = remaining > 0
-        ? `${fmtNum(remaining)} to go · on track`
-        : remaining === 0 ? 'All in. Bullseye.'
-        : `${fmtNum(-remaining)} over · ease up`;
+    document.getElementById('log-btn').addEventListener('click', logEntry);
 
-      const goPrev = () => setDate(new Date(date.getTime() - 86400000));
-      const goNext = () => { if (!isFuture) setDate(new Date(date.getTime() + 86400000)); };
-
-      const dayLabel = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      const tag = isToday ? '● TODAY' : `● ${dayLabel.toUpperCase()}`;
-
-      return html`<div class="screen">
-        <div style="padding: 14px 20px 8px;">
-          <div class="large-title">Diary</div>
-          <div class="subtitle">${subtitle}</div>
-        </div>
-
-        <div style="display:flex; align-items:center; padding: 8px 20px 14px;">
-          <button class="date-pill" onClick=${goPrev}><${Icon} name="chev_l" size=14/></button>
-          <div style="flex:1; text-align:center;">
-            <div class="sec-label" style="color: var(--cyan); text-shadow: 0 0 8px rgba(0,229,255,0.6);">${tag}</div>
-            <div style="font-size: 19px; font-weight: 700; margin-top: 2px;">${dayLabel}</div>
-          </div>
-          <button class="date-pill" disabled=${isFuture} onClick=${goNext}><${Icon} name="chev_r" size=14/></button>
-        </div>
-
-        <div class="glass" style="margin: 0 16px 18px; padding: 18px;">
-          <div style="display: flex; gap: 16px; align-items: center;">
-            <${CalorieRing} consumed=${totals.cal} goal=${goal} size=${152} stroke=${12} />
-            <div style="flex:1; display: flex; flex-direction: column; gap: 12px;">
-              <${MacroBar} label="Protein" current=${totals.p} goal=${s.user.proteinGoal} color="var(--cyan)" />
-              <${MacroBar} label="Carbs"   current=${totals.c} goal=${s.user.carbsGoal}   color="var(--orange)" />
-              <${MacroBar} label="Fat"     current=${totals.f} goal=${s.user.fatGoal}     color="var(--purple)" />
-            </div>
-          </div>
-        </div>
-
-        ${MEALS.map(m => {
-          const entries = entriesForDay(s.meals, dKey, m.id);
-          const kcal = entries.reduce((sum, e) => sum + (e.calories || 0), 0);
-          return html`<${MealSection}
-            key=${m.id}
-            meal=${m}
-            entries=${entries}
-            kcal=${kcal}
-            onAdd=${() => onAddFood(m.id)}
-            onTapEntry=${(e) => onEdit(logEntryToFood(e), e.mealType, e)}
-            onDelete=${(e) => deleteMeal(e.id)}
-          />`;
-        })}
-      </div>`;
-    }
-
-    function CalorieRing({ consumed, goal, size, stroke }) {
-      const radius = (size - stroke) / 2;
-      const C = 2 * Math.PI * radius;
-      const progress = Math.min(consumed / Math.max(1, goal), 1.5);
-      const remaining = goal - consumed;
-      const dash = `${C * Math.min(progress, 1)} ${C}`;
-      const overDash = progress > 1 ? `${C * (progress - 1)} ${C}` : '0 0';
-
-      return html`<div class="ring" style=${{ width: size + 'px', height: size + 'px' }}>
-        <svg width=${size} height=${size}>
-          <defs>
-            <linearGradient id="ringg" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%"  stop-color="var(--cyan)"/>
-              <stop offset="50%" stop-color="var(--pink)"/>
-              <stop offset="100%" stop-color="var(--purple)"/>
-            </linearGradient>
-          </defs>
-          <circle cx=${size/2} cy=${size/2} r=${radius}
-                  fill="none" stroke="rgba(255,255,255,0.05)" stroke-width=${stroke}/>
-          <circle cx=${size/2} cy=${size/2} r=${radius}
-                  fill="none" stroke="url(#ringg)" stroke-width=${stroke}
-                  stroke-linecap="round" stroke-dasharray=${dash}
-                  style=${{ filter: 'drop-shadow(0 0 8px rgba(0,229,255,0.5))' }}/>
-          ${progress > 1 && html`<circle cx=${size/2} cy=${size/2} r=${radius}
-                  fill="none" stroke="var(--pink)" stroke-opacity="0.7" stroke-width=${stroke}
-                  stroke-linecap="round" stroke-dasharray=${overDash}/>`}
-        </svg>
-        <div class="center">
-          <div class="label-top" style=${{
-            color: remaining >= 0 ? 'var(--cyan)' : 'var(--pink)',
-            textShadow: `0 0 6px ${remaining >= 0 ? 'rgba(0,229,255,0.7)' : 'rgba(255,20,147,0.7)'}`,
-          }}>${remaining >= 0 ? 'REMAINING' : 'OVER'}</div>
-          <div class="num-big" style=${{ fontSize: (size * 0.27) + 'px' }}>${fmtNum(Math.abs(remaining))}</div>
-          <div class="frac">${fmtNum(consumed)} / ${fmtNum(goal)} kcal</div>
-        </div>
-      </div>`;
-    }
-
-    function MacroBar({ label, current, goal, color }) {
-      const pct = Math.min(current / Math.max(1, goal), 1);
-      const over = current > goal;
-      const overPct = over ? Math.min((current - goal) / goal, 1) : 0;
-      return html`<div class="macro-bar">
-        <div class="header">
-          <span class="dot" style=${{ background: color, boxShadow: `0 0 4px ${color}` }}></span>
-          <span class="label">${label}</span>
-          <span class="nums num"><span class="cur">${Math.round(current)}</span> <span class="goal">/ ${goal}g</span></span>
-        </div>
-        <div class="track">
-          <div class="fill" style=${{ width: (pct * 100) + '%', background: color, boxShadow: `0 0 4px ${color}` }}></div>
-          ${over && html`<div class="fill" style=${{
-            width: (overPct * 100) + '%',
-            background: 'var(--orange)',
-            boxShadow: '0 0 4px var(--orange)',
-          }}></div>`}
-        </div>
-      </div>`;
-    }
-
-    function MealSection({ meal, entries, kcal, onAdd, onTapEntry, onDelete }) {
-      const c = meal.color;
-      return html`<div class="meal-card glass glass-flush">
-        <div class="meal-header">
-          <div class="meal-icon" style=${{
-            background: `color-mix(in srgb, ${c} 15%, transparent)`,
-            border: `0.5px solid color-mix(in srgb, ${c} 50%, transparent)`,
-            color: c,
-            boxShadow: `0 0 10px color-mix(in srgb, ${c} 40%, transparent)`,
-          }}>${meal.icon}</div>
-          <div style="flex:1;">
-            <div class="meal-name" style=${{ color: c, textShadow: `0 0 6px ${c}` }}>${meal.name}</div>
-            <div class="meal-kcal num">${kcal} kcal</div>
-          </div>
-          <button class="pill" style=${{
-            color: c, borderColor: `color-mix(in srgb, ${c} 50%, transparent)`,
-            background: `color-mix(in srgb, ${c} 12%, transparent)`,
-            boxShadow: `0 0 8px color-mix(in srgb, ${c} 40%, transparent)`
-          }} onClick=${onAdd}>
-            <${Icon} name="plus" size=12 stroke=2 /> Add
-          </button>
-        </div>
-        ${entries.length === 0
-          ? html`<button class="empty-cta" style=${{
-              border: `1px dashed color-mix(in srgb, ${c} 50%, transparent)`,
-              background: `color-mix(in srgb, ${c} 6%, transparent)`,
-              color: 'var(--text-hi)',
-            }} onClick=${onAdd}>
-              <span style=${{
-                width: '24px', height: '24px', borderRadius: '50%',
-                border: `1px dashed ${c}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: c
-              }}><${Icon} name="plus" size=12 stroke=2 /></span>
-              <span>${meal.emptyCopy}</span>
-            </button>`
-          : entries.map(e => html`<div class="meal-row" key=${e.id}
-              onClick=${() => onTapEntry(e)}
-              onContextMenu=${(ev) => { ev.preventDefault(); if (confirm(`Delete "${e.foodName}"?`)) onDelete(e); }}>
-            <div style="flex:1; min-width:0;">
-              <div class="name">${e.foodName} ${e.isApproved && html`<${PinkSeal} size=14 />`}</div>
-              <div class="sub">${e.brand ? e.brand + ' · ' : ''}${e.qty}x ${e.size}${e.unit}</div>
-            </div>
-            <div class="cal num">${e.calories}</div>
-          </div>`)
-        }
-        <div style="height: 10px;"></div>
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       SEARCH
-       ───────────────────────────────────────────────────────────────── */
-    function Search({ onOpenFood, onOpenScanner }) {
-      const s = useStore();
-      const [query, setQuery] = useState('');
-      const [tab, setTab] = useState('all');
-      const [usdaResults, setUsdaResults] = useState([]);
-      const [loading, setLoading] = useState(false);
-      const logIndex = useMemo(() => buildLogIndex(s.meals), [s.meals]);
-      const debounceRef = useRef(null);
-
-      // Debounced USDA search
-      useEffect(() => {
-        clearTimeout(debounceRef.current);
-        if (!query.trim()) { setUsdaResults([]); setLoading(false); return; }
-        debounceRef.current = setTimeout(async () => {
-          setLoading(true);
-          const r = await searchUSDA(query, ['Branded','Foundation','SR Legacy'], 20);
-          setUsdaResults(r);
-          setLoading(false);
-        }, 350);
-        return () => clearTimeout(debounceRef.current);
-      }, [query]);
-
-      const curated = searchCurated(query).map(curatedToFood);
-      const recent = recentLogged(logIndex, 6).filter(it => !query.trim() || it.name.toLowerCase().includes(query.toLowerCase()));
-      const top = topLogged(logIndex, 6);
-
-      // Build results sections
-      const sections = [];
-      if (query.trim()) {
-        if (curated.length) sections.push({ title: '★ Curated', color: 'var(--pink)', foods: curated });
-        if (recent.length) sections.push({ title: '↻ Your History', color: 'var(--cyan)',
-            foods: recent.map(r => logEntryToFood(r.sample)) });
-        const branded = usdaResults.filter(f => f.dataType === 'Branded');
-        const foundation = usdaResults.filter(f => f.dataType === 'Foundation' || f.dataType === 'SR Legacy');
-        if (branded.length) sections.push({ title: 'Branded', color: 'var(--purple)', foods: branded });
-        if (foundation.length) sections.push({ title: 'USDA Foundation', color: 'var(--text-mid)', foods: foundation });
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      const count = todayEntries().length;
+      if (count === 0) { showToast('Nothing to clear'); return; }
+      if (confirm(`Clear ${count} ${count === 1 ? 'entry' : 'entries'} from today?`)) {
+        const k = dayKey();
+        state.entries = state.entries.filter(e => e.day !== k);
+        save(); render(); vibrate(20);
+        showToast('Day cleared');
       }
+    });
 
-      return html`<div class="screen">
-        <div style="padding: 14px 20px 6px;">
-          <div class="large-title">Find food</div>
-          <div class="subtitle">Curated first. Tap to log, swipe to dive deeper.</div>
-        </div>
-
-        <div style="padding: 14px 0 0;">
-          <div class="search-bar">
-            <${Icon} name="search" size=18 color="var(--cyan)"/>
-            <input value=${query} onInput=${(e) => setQuery(e.target.value)}
-                   placeholder="Search foods, brands, recipes…" type="search" enterkeyhint="search"/>
-            ${query && html`<button class="date-pill" style="width:28px;height:28px;background:transparent;border:none;color:var(--text-low);" onClick=${() => setQuery('')}><${Icon} name="x" size=14/></button>`}
-            <button class="barcode-btn" onClick=${onOpenScanner}><${Icon} name="barcode" size=18 color="var(--pink)"/></button>
-          </div>
-        </div>
-
-        <div class="pill-tabs">
-          ${[
-            { id: 'all',    label: 'All' },
-            { id: 'top',    label: 'Top' },
-            { id: 'recent', label: 'Recent' },
-          ].map(t => html`
-            <button class=${'pill-tab ' + (tab === t.id ? 'active' : '')} onClick=${() => setTab(t.id)}>${t.label}</button>`)}
-        </div>
-
-        ${tab === 'all' && !query.trim() && html`<${EmptyAllState} top=${top} onOpen=${onOpenFood} />`}
-        ${tab === 'all' && query.trim() && html`${sections.length > 0
-          ? sections.map(sec => html`<${ResultsSection} key=${sec.title} title=${sec.title} color=${sec.color} foods=${sec.foods} onOpen=${onOpenFood} />`)
-          : (loading
-              ? html`<div style="text-align:center;padding:32px;color:var(--text-mid);">Searching…</div>`
-              : html`<div style="text-align:center;padding:32px;color:var(--text-mid);">No matches yet.</div>`)
-        }`}
-
-        ${tab === 'top' && html`<${EmptyAllState} top=${top} onOpen=${onOpenFood} />`}
-
-        ${tab === 'recent' && html`<div style="padding: 0 16px;">
-          ${recent.length === 0
-            ? html`<div style="text-align:center;padding:32px;color:var(--text-mid);">No recent foods yet.</div>`
-            : html`<div class="glass glass-flush">${recent.map((r, i) => {
-                const food = logEntryToFood(r.sample);
-                return html`<${ResultRow} key=${r.name} food=${food} isApproved=${r.approved} isRecent onClick=${() => onOpenFood(food)} />`;
-              })}</div>`
-          }
-        </div>`}
-      </div>`;
-    }
-
-    function EmptyAllState({ top, onOpen }) {
-      const COLORS = ['var(--pink)','var(--cyan)','var(--purple)','var(--orange)','var(--green)','var(--yellow)'];
-      if (!top.length) {
-        return html`<div style="padding: 40px 32px; text-align: center;">
-          <div style="font-size: 17px; font-weight: 600; margin-bottom: 6px;">No top foods yet</div>
-          <div style="font-size: 13px; color: var(--text-mid);">Log a few meals and your most-frequent foods will show up here for one-tap logging.</div>
-        </div>`;
-      }
-      return html`<div>
-        <div style="padding: 0 20px 10px; display: flex; align-items: baseline; gap: 8px;">
-          <span class="sec-label" style="color: var(--pink); text-shadow: 0 0 6px rgba(255,20,147,0.6);">★ Top Foods</span>
-          <span style="font-size: 11px; color: var(--text-low);">your shortcut hub</span>
-        </div>
-        <div class="top-grid">
-          ${top.map((t, i) => {
-            const c = COLORS[i % COLORS.length];
-            const food = logEntryToFood(t.sample);
-            return html`<button class="top-card clickable" key=${t.name} onClick=${() => onOpen(food)} style="background: var(--surface); border: 0.5px solid var(--hairline2); text-align: left; color: white;">
-              <div class="streak" style=${{ background: `radial-gradient(circle at top right, color-mix(in srgb, ${c} 35%, transparent), transparent 70%)` }}></div>
-              <span class="count-badge" style=${{
-                background: `color-mix(in srgb, ${c} 22%, transparent)`,
-                border: `0.5px solid color-mix(in srgb, ${c} 55%, transparent)`,
-                color: c,
-                textShadow: `0 0 4px ${c}`,
-              }}>${t.count}×</span>
-              <div>
-                <div class="name">${t.name}${t.approved ? html` <${PinkSeal} size=11 />` : ''}</div>
-                <div class="kcal">${t.sample.calories} kcal</div>
-              </div>
-            </button>`;
-          })}
-        </div>
-      </div>`;
-    }
-
-    function ResultsSection({ title, color, foods, onOpen }) {
-      return html`<div style="margin-top: 16px;">
-        <div style="padding: 0 20px 8px;">
-          <span class="sec-label" style=${{ color, textShadow: `0 0 6px ${color}` }}>${title}</span>
-        </div>
-        <div class="glass glass-flush" style="margin: 0 16px;">
-          ${foods.map(f => html`<${ResultRow} key=${f.id} food=${f} onClick=${() => onOpen(f)} />`)}
-        </div>
-      </div>`;
-    }
-
-    function ResultRow({ food, isApproved, isRecent, onClick }) {
-      return html`<div class="result-row clickable" onClick=${onClick}>
-        <div class="info">
-          <div class="name">${isRecent ? html`<span style="display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--cyan);box-shadow:0 0 4px var(--cyan);margin-right:6px;vertical-align:middle;"></span>` : ''}${food.name}${isApproved && html` <${PinkSeal} size=12 />`}</div>
-          <div class="sub">${food.brand ? food.brand + ' · ' : ''}${food.serving || (food.size + ' ' + food.unit)}</div>
-        </div>
-        <div class="kcal">
-          <div class="kcal-n num">${calorieDisplay(food)}</div>
-          <div class="kcal-l">kcal</div>
-        </div>
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       MOBILITY
-       ───────────────────────────────────────────────────────────────── */
-    const MOB_TASKS = [
-      { id: 'pullups',  title: '50 Pull-ups',     color: 'var(--pink)',   icon: '↑' },
-      { id: 'pushups',  title: '100 Push-ups',    color: 'var(--cyan)',   icon: '↓' },
-      { id: 'squats',   title: '100 Squats',      color: 'var(--purple)', icon: '⤓' },
-      { id: 'mobility', title: '10 min Mobility', color: 'var(--green)',  icon: '✦' },
-    ];
-
-    function Mobility() {
-      const s = useStore();
-      const [showCelebration, setShowCelebration] = useState(false);
-      const tkey = todayKey();
-      const todayLog = s.mobility[tkey] || { pullups: false, pushups: false, squats: false, mobility: false };
-      const done = MOB_TASKS.filter(t => todayLog[t.id]).length;
-      const allDone = done === 4;
-
-      const toggle = (id) => {
-        const wasAll = allDone;
-        const next = !todayLog[id];
-        setMobility(tkey, id, next);
-        haptic(next ? 'success' : 'light');
-        if (!wasAll && next) {
-          const allNext = ['pullups','pushups','squats','mobility'].every(k => k === id ? next : todayLog[k]);
-          if (allNext) {
-            haptic('heavy');
-            setShowCelebration(true);
-            setTimeout(() => setShowCelebration(false), 2200);
-          }
-        }
-      };
-
-      // Streak math
-      function currentStreak() {
-        let streak = 0;
-        const d = new Date(tkey);
-        if (!isAllDone(s.mobility[tkey])) d.setDate(d.getDate() - 1);
-        for (let i = 0; i < 365; i++) {
-          const k = dateKey(d);
-          if (isAllDone(s.mobility[k])) { streak++; d.setDate(d.getDate() - 1); }
-          else break;
-        }
-        return streak;
-      }
-      function isAllDone(log) {
-        if (!log) return false;
-        return log.pullups && log.pushups && log.squats && log.mobility;
-      }
-      function longestStreak() {
-        const dates = Object.keys(s.mobility).filter(k => isAllDone(s.mobility[k])).sort();
-        let longest = 0, current = 0, prev = null;
-        for (const d of dates) {
-          if (prev) {
-            const diff = (new Date(d) - new Date(prev)) / 86400000;
-            current = diff === 1 ? current + 1 : 1;
-          } else current = 1;
-          if (current > longest) longest = current;
-          prev = d;
-        }
-        return longest;
-      }
-      function perfectCount() { return Object.keys(s.mobility).filter(k => isAllDone(s.mobility[k])).length; }
-      function thirtyDayPct() {
-        let done = 0;
-        for (let i = 0; i < 30; i++) {
-          const d = new Date(tkey); d.setDate(d.getDate() - i);
-          const log = s.mobility[dateKey(d)] || {};
-          done += (log.pullups?1:0) + (log.pushups?1:0) + (log.squats?1:0) + (log.mobility?1:0);
-        }
-        return Math.round((done / (30 * 4)) * 100);
-      }
-
-      const streak = currentStreak();
-      const longest = longestStreak();
-
-      const sub = done === 4 ? 'All four done — beast mode'
-                : done === 0 ? 'Start your day strong'
-                : (4 - done === 1 ? '1 more to go — finish the day.' : `${4-done} more to go — keep moving.`);
-
-      return html`<div class="screen">
-        <div style="padding: 14px 20px 6px;">
-          <div class="large-title">Mobility</div>
-        </div>
-
-        <div class="streak-card">
-          <div class="flame"></div>
-          <div style="flex:1;">
-            <div class="sec-label" style="color: var(--orange); text-shadow: 0 0 8px rgba(255,107,53,0.7);">STREAK</div>
-            <div style="font-size: 36px; font-weight: 800; letter-spacing: -0.6px; color: white; margin-top: 4px; text-shadow: 0 0 14px rgba(255,20,147,0.5);" class="num">
-              ${streak} ${streak === 1 ? 'day' : 'days'}
-            </div>
-            <div style="font-size: 13px; color: var(--text-mid); margin-top: 4px;">${sub}</div>
-          </div>
-        </div>
-
-        <div style="padding: 0 20px 10px;">
-          <span class="sec-label" style="color: var(--pink); text-shadow: 0 0 6px rgba(255,20,147,0.6);">● TODAY</span>
-        </div>
-
-        ${MOB_TASKS.map(t => html`<${TaskCard} key=${t.id} task=${t} isDone=${!!todayLog[t.id]} onToggle=${() => toggle(t.id)}/>`)}
-
-        <div style="padding: 0 16px;">
-          <div class="glass" style="margin: 14px 0;">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px;">
-              <span class="sec-label" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">● LAST 7 DAYS</span>
-              <span class="num" style="font-size: 11px; color: var(--text-low);">${weekSummary(s.mobility, tkey)}</span>
-            </div>
-            <${WeekDots} mobility=${s.mobility} tkey=${tkey}/>
-          </div>
-        </div>
-
-        <div style="padding: 0 20px 10px;">
-          <span class="sec-label" style="color: var(--purple); text-shadow: 0 0 6px rgba(176,0,255,0.6);">● STATS</span>
-        </div>
-
-        <div style="display: flex; gap: 10px; padding: 0 16px 10px;">
-          <${StatTile} label="Current" value=${streak} unit=${streak === 1 ? 'day' : 'days'} color="var(--orange)" delta=${streak > 0 ? '🔥 on fire' : 'start today'} deltaColor="var(--orange)"/>
-          <${StatTile} label="Longest" value=${longest} unit=${longest === 1 ? 'day' : 'days'} color="var(--pink)" delta=${longest > 0 ? 'personal best' : "let's go"} deltaColor="var(--text-mid)"/>
-        </div>
-        <div style="display: flex; gap: 10px; padding: 0 16px;">
-          <${StatTile} label="Perfect days" value=${perfectCount()} color="var(--cyan)" delta="all time" deltaColor="var(--text-mid)"/>
-          <${StatTile} label="30-day rate" value=${thirtyDayPct()} unit="%" color="var(--green)" delta="completion" deltaColor="var(--green)"/>
-        </div>
-
-        ${showCelebration && html`<div class="roadhouse" onClick=${() => setShowCelebration(false)}>
-          <div class="stamp">DAY 100%</div>
-          <div class="title">BEAST MODE</div>
-          <div class="sub">● ● ●  ALL FOUR DONE  ● ● ●</div>
-        </div>`}
-      </div>`;
-    }
-
-    function TaskCard({ task, isDone, onToggle }) {
-      return html`<div class="task-card" onClick=${onToggle} style=${{
-        background: isDone ? `color-mix(in srgb, ${task.color} 12%, var(--surface))` : 'var(--surface)',
-        border: `0.5px solid ${isDone ? `color-mix(in srgb, ${task.color} 50%, transparent)` : 'var(--hairline2)'}`,
-        boxShadow: isDone ? `0 0 18px color-mix(in srgb, ${task.color} 30%, transparent)` : '0 4px 14px rgba(0,0,0,0.25)',
-      }}>
-        <div class="task-tile" style=${{
-          background: `color-mix(in srgb, ${task.color} 22%, transparent)`,
-          border: `0.5px solid color-mix(in srgb, ${task.color} 50%, transparent)`,
-          color: task.color,
-          fontSize: '24px',
-          boxShadow: `0 0 16px color-mix(in srgb, ${task.color} 35%, transparent)`,
-        }}>${task.icon}</div>
-        <div style="flex:1; min-width: 0;">
-          <div style=${{
-            fontSize: '17px', fontWeight: 700, letterSpacing: '-0.2px',
-            textDecoration: isDone ? 'line-through' : 'none',
-            textDecorationColor: task.color, opacity: isDone ? 0.7 : 1,
-          }}>${task.title}</div>
-          <div class="num" style=${{ fontSize: '12px', marginTop: '2px', color: isDone ? task.color : 'var(--text-low)' }}>
-            ${isDone ? '✓ Done' : 'Tap to complete'}
-          </div>
-        </div>
-        <div class="check-circle" style=${{
-          background: isDone ? task.color : 'transparent',
-          border: `2px solid ${isDone ? task.color : `color-mix(in srgb, ${task.color} 50%, transparent)`}`,
-          boxShadow: isDone ? `0 0 12px ${task.color}` : 'none',
-          color: 'black',
-        }}>
-          ${isDone && html`<${Icon} name="check" size=14 color="black" stroke=2.5/>`}
-        </div>
-      </div>`;
-    }
-
-    function WeekDots({ mobility, tkey }) {
-      const colors = ['var(--pink)','var(--cyan)','var(--purple)','var(--green)'];
-      const ids = ['pullups','pushups','squats','mobility'];
-      const days = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(tkey); d.setDate(d.getDate() - i);
-        days.push({ key: dateKey(d), letter: 'SMTWTFS'[d.getDay()], today: i === 0 });
-      }
-      return html`<div style="display: flex; justify-content: space-between;">
-        ${days.map(day => html`<div key=${day.key} style="display: flex; flex-direction: column; align-items: center; gap: 6px;">
-          ${ids.map((id, i) => {
-            const on = (mobility[day.key] || {})[id];
-            return html`<div class="week-dot" key=${id} style=${{
-              background: on ? colors[i] : 'rgba(255,255,255,0.07)',
-              border: on ? 'none' : `1px solid color-mix(in srgb, ${colors[i]} 25%, transparent)`,
-              boxShadow: on ? `0 0 6px ${colors[i]}` : 'none',
-            }}></div>`;
-          })}
-          <div class="num" style=${{ fontSize: '11px', fontWeight: 700,
-            color: day.today ? 'var(--pink)' : 'var(--text-low)',
-            textShadow: day.today ? '0 0 4px rgba(255,20,147,0.6)' : 'none',
-            marginTop: '4px',
-          }}>${day.letter}</div>
-        </div>`)}
-      </div>`;
-    }
-
-    function weekSummary(mobility, tkey) {
-      let perfect = 0, partial = 0;
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(tkey); d.setDate(d.getDate() - i);
-        const log = mobility[dateKey(d)];
-        if (!log) continue;
-        const c = (log.pullups?1:0)+(log.pushups?1:0)+(log.squats?1:0)+(log.mobility?1:0);
-        if (c === 4) perfect++;
-        else if (c > 0) partial++;
-      }
-      if (perfect === 0 && partial === 0) return '0/7';
-      const parts = [perfect ? `${perfect} perfect` : null, partial ? `${partial} in progress` : null].filter(Boolean);
-      return parts.join(' · ');
-    }
-
-    function StatTile({ label, value, unit, color, delta, deltaColor }) {
-      return html`<div class="stat-tile">
-        <div class="label" style=${{ color, textShadow: `0 0 6px ${color}` }}>${label}</div>
-        <div style="display: flex; align-items: baseline; gap: 4px;">
-          <div class="value">${value}</div>
-          ${unit && html`<div class="unit">${unit}</div>`}
-        </div>
-        ${delta && html`<div class="delta" style=${{ color: deltaColor }}>${delta}</div>`}
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       PROGRESS
-       ───────────────────────────────────────────────────────────────── */
-    function Progress() {
-      const s = useStore();
-      const [range, setRange] = useState('1M');
-      const RANGES = { '1W': 7, '1M': 30, '3M': 90, '1Y': 365, 'ALL': Infinity };
-      const days = RANGES[range];
-
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - days);
-      const wEntries = days === Infinity ? s.weights.slice() : s.weights.filter(w => new Date(w.date) >= cutoff);
-      wEntries.sort((a, b) => a.date.localeCompare(b.date));
-
-      const dailyMap = {};
-      for (const m of s.meals) {
-        if (days !== Infinity && new Date(m.date) < cutoff) continue;
-        if (!dailyMap[m.date]) dailyMap[m.date] = { date: m.date, cal: 0, p: 0 };
-        dailyMap[m.date].cal += m.calories || 0;
-        dailyMap[m.date].p += m.protein || 0;
-      }
-      const days_arr = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
-
-      const wFirst = wEntries[0]?.weight, wLast = wEntries[wEntries.length - 1]?.weight;
-      const wChange = (wFirst != null && wLast != null) ? wLast - wFirst : null;
-      const goalW = s.user.targetWeight;
-
-      const goal = s.user.dailyCalorieGoal || 2000;
-      const avgCal = days_arr.length ? Math.round(days_arr.reduce((s, d) => s + d.cal, 0) / days_arr.length) : 0;
-      const onGoal = days_arr.filter(d => d.cal > 0 && d.cal <= goal).length;
-      const loggedDays = days_arr.filter(d => d.cal > 0).length;
-
-      const [showAdd, setShowAdd] = useState(false);
-      const [newWeight, setNewWeight] = useState('');
-
-      return html`<div class="screen">
-        <div style="padding: 14px 20px 6px; display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <div class="large-title">Progress</div>
-            <div class="subtitle">${progressSubtitle(wChange, loggedDays, onGoal, s.user.weightUnit)}</div>
-          </div>
-          <button class="date-pill" style="color: var(--cyan); background: color-mix(in srgb, var(--cyan) 10%, transparent); box-shadow: 0 0 8px rgba(0,229,255,0.4);" onClick=${() => setShowAdd(true)}>
-            <${Icon} name="plus" size=14 color="var(--cyan)"/>
-          </button>
-        </div>
-
-        <div style="padding: 12px 16px;">
-          <div style="display:flex; padding: 3px; height: 34px; background: rgba(255,255,255,0.04); border-radius: 17px; border: 0.5px solid var(--hairline);">
-            ${Object.keys(RANGES).map(k => html`<button key=${k}
-                style=${{
-                  flex: 1, height: '28px', borderRadius: '14px', border: 'none',
-                  background: range === k ? 'color-mix(in srgb, var(--cyan) 10%, transparent)' : 'transparent',
-                  color: range === k ? 'var(--cyan)' : 'var(--text-mid)',
-                  fontSize: '12px', fontWeight: 700, letterSpacing: '0.8px',
-                  fontFamily: 'ui-monospace, monospace',
-                  textShadow: range === k ? '0 0 6px rgba(0,229,255,0.7)' : 'none',
-                  outline: range === k ? '0.5px solid color-mix(in srgb, var(--cyan) 55%, transparent)' : 'none',
-                }}
-                onClick=${() => { haptic('light'); setRange(k); }}>${k}</button>`)}
-          </div>
-        </div>
-
-        <div class="glass chart-card">
-          <div class="head">
-            <div>
-              <span class="sec-label" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">● WEIGHT</span>
-              <div style="display:flex; align-items:baseline; gap:6px; margin-top: 4px;">
-                <div class="val">${wLast != null ? wLast.toFixed(1) : '—'}</div>
-                <div class="lbl">${s.user.weightUnit}</div>
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div class="delta" style=${{ color: (wChange ?? 0) < 0 ? 'var(--green)' : 'var(--pink)', textShadow: '0 0 6px currentColor' }}>
-                ${wChange == null ? '—' : `${wChange < 0 ? '↓' : '↑'} ${Math.abs(wChange).toFixed(1)} ${s.user.weightUnit}`}
-              </div>
-              <div class="lbl">past ${range}</div>
-            </div>
-          </div>
-          ${wEntries.length === 0
-            ? html`<div style="text-align:center; padding: 30px 0; color: var(--text-low);">No weight entries yet. Tap + to log one.</div>`
-            : html`<${WeightLineChart} entries=${wEntries} goal=${goalW} unit=${s.user.weightUnit}/>`
-          }
-        </div>
-
-        <div class="glass chart-card">
-          <div class="head">
-            <div>
-              <span class="sec-label" style="color: var(--pink); text-shadow: 0 0 6px rgba(255,20,147,0.6);">● CALORIES</span>
-              <div style="display:flex; align-items:baseline; gap:6px; margin-top: 4px;">
-                <div class="val">${fmtNum(avgCal)}</div>
-                <div class="lbl">avg / day</div>
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div class="delta" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">
-                ${loggedDays > 0 ? `${avgCal - goal >= 0 ? '+' : '−'}${Math.abs(avgCal - goal)} vs goal` : '—'}
-              </div>
-              <div class="lbl">${loggedDays} days</div>
-            </div>
-          </div>
-          ${days_arr.length === 0
-            ? html`<div style="text-align:center; padding: 30px 0; color: var(--text-low);">No meals logged in range.</div>`
-            : html`<${CalorieBarChart} days=${days_arr} goal=${goal}/>`
-          }
-        </div>
-
-        <div style="display: flex; gap: 10px; padding: 0 16px 10px;">
-          <${StatTile} label="On-goal %" value=${loggedDays ? Math.round(onGoal/loggedDays*100) : 0} unit="%" color="var(--pink)" delta=${`${onGoal} of ${loggedDays} days`} deltaColor="var(--cyan)"/>
-          <${StatTile} label="Days logged" value=${loggedDays} color="var(--orange)" delta=${`this ${range}`} deltaColor="var(--text-mid)"/>
-        </div>
-
-        ${showAdd && html`<${WeightDialog} unit=${s.user.weightUnit} initial=${newWeight}
-          onCancel=${() => { setShowAdd(false); setNewWeight(''); }}
-          onSave=${(w) => { addWeight(w); setShowAdd(false); setNewWeight(''); }}/>`}
-      </div>`;
-    }
-
-    function progressSubtitle(wChange, logged, onGoal, unit) {
-      const bits = [];
-      if (wChange != null && Math.abs(wChange) >= 0.1) bits.push(`${wChange < 0 ? '↓' : '↑'} ${Math.abs(wChange).toFixed(1)} ${unit}`);
-      if (logged > 0) bits.push(`${Math.round(onGoal/logged*100)}% on goal`);
-      return bits.length ? bits.join(' · ') : 'Start logging to see trends';
-    }
-
-    function WeightLineChart({ entries, goal, unit }) {
-      const W = 320, H = 160, padL = 30, padR = 10, padT = 14, padB = 22;
-      const xs = entries.map((_, i) => i);
-      const ys = entries.map(e => e.weight);
-      const yMin = Math.min(...ys) - 1, yMax = Math.max(...ys) + 1;
-      const range = yMax - yMin || 1;
-      const xFor = (i) => padL + (i / Math.max(1, entries.length - 1)) * (W - padL - padR);
-      const yFor = (v) => padT + (1 - (v - yMin) / range) * (H - padT - padB);
-      const line = entries.map((e, i) => `${i ? 'L' : 'M'} ${xFor(i).toFixed(1)} ${yFor(e.weight).toFixed(1)}`).join(' ');
-      const area = `${line} L ${xFor(entries.length - 1)} ${H - padB} L ${xFor(0)} ${H - padB} Z`;
-      const ticks = [yMin, (yMin + yMax) / 2, yMax];
-      const last = entries[entries.length - 1];
-
-      return html`<svg width="100%" height=${H} viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="none" style="display: block;">
-        <defs>
-          <linearGradient id="warea" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.45"/>
-            <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0"/>
-          </linearGradient>
-          <linearGradient id="wline" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="var(--cyan)"/>
-            <stop offset="100%" stop-color="var(--pink)"/>
-          </linearGradient>
-        </defs>
-        ${ticks.map((t, i) => html`<g key=${i}>
-          <line x1=${padL} y1=${yFor(t)} x2=${W - padR} y2=${yFor(t)} stroke="rgba(255,255,255,0.06)" stroke-dasharray="2 4"/>
-          <text x=${padL - 6} y=${yFor(t) + 3} text-anchor="end" font-size="9" fill="var(--text-low)" font-family="ui-monospace, monospace">${t.toFixed(0)}</text>
-        </g>`)}
-        ${goal && goal > yMin && goal < yMax && html`<g>
-          <line x1=${padL} y1=${yFor(goal)} x2=${W - padR} y2=${yFor(goal)} stroke="var(--pink)" stroke-opacity="0.5" stroke-dasharray="3 3"/>
-          <text x=${W - padR} y=${yFor(goal) - 4} text-anchor="end" font-size="9" fill="var(--pink)" font-family="ui-monospace, monospace">GOAL ${Math.round(goal)}</text>
-        </g>`}
-        <path d=${area} fill="url(#warea)"/>
-        <path d=${line} fill="none" stroke="url(#wline)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="filter: drop-shadow(0 0 6px rgba(0,229,255,0.7));"/>
-        <circle cx=${xFor(entries.length - 1)} cy=${yFor(last.weight)} r="4" fill="var(--pink)" style="filter: drop-shadow(0 0 6px var(--pink));"/>
-      </svg>`;
-    }
-
-    function CalorieBarChart({ days, goal }) {
-      const W = 320, H = 130, padL = 24, padR = 8, padT = 14, padB = 18;
-      const N = days.length;
-      const max = Math.max(goal * 1.2, ...days.map(d => d.cal));
-      const bw = (W - padL - padR) / N - 2;
-      return html`<svg width="100%" height=${H} viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="none" style="display: block;">
-        <defs>
-          <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--pink)"/>
-            <stop offset="100%" stop-color="var(--purple)"/>
-          </linearGradient>
-          <linearGradient id="barover" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stop-color="var(--orange)"/>
-            <stop offset="100%" stop-color="var(--pink)"/>
-          </linearGradient>
-        </defs>
-        <line x1=${padL} y1=${padT + (1 - goal/max) * (H - padT - padB)} x2=${W - padR} y2=${padT + (1 - goal/max) * (H - padT - padB)}
-              stroke="var(--cyan)" stroke-opacity="0.5" stroke-dasharray="3 3"/>
-        ${days.map((d, i) => {
-          const x = padL + i * ((W - padL - padR) / N) + 1;
-          const h = (d.cal / max) * (H - padT - padB);
-          const y = padT + (H - padT - padB) - h;
-          const over = d.cal > goal;
-          return html`<rect key=${d.date} x=${x} y=${y} width=${bw} height=${h} rx="2" fill=${over ? 'url(#barover)' : 'url(#bar)'}/>`;
-        })}
-      </svg>`;
-    }
-
-    function WeightDialog({ unit, onCancel, onSave }) {
-      const [v, setV] = useState('');
-      return html`<div class="modal-backdrop" onClick=${onCancel}>
-        <div class="modal" onClick=${(e) => e.stopPropagation()}>
-          <h2>Log weight</h2>
-          <div class="body">Enter your current weight in ${unit}.</div>
-          <input type="number" inputmode="decimal" placeholder=${`weight (${unit})`} value=${v} onInput=${(e) => setV(e.target.value)} autofocus/>
+    // Goals modal
+    document.getElementById('goals-btn').addEventListener('click', () => {
+      const overlay = document.createElement('div');
+      overlay.className = 'modal-backdrop';
+      overlay.innerHTML = `
+        <div class="modal">
+          <h2>Daily goals</h2>
+          <div class="row"><label>Calories</label><input id="g-cal" type="number" inputmode="decimal" value="${state.goals.cal}"></div>
+          <div class="row"><label>Protein (g)</label><input id="g-p" type="number" inputmode="decimal" value="${state.goals.p}"></div>
+          <div class="row"><label>Carbs (g)</label><input id="g-c" type="number" inputmode="decimal" value="${state.goals.c}"></div>
+          <div class="row"><label>Fat (g)</label><input id="g-f" type="number" inputmode="decimal" value="${state.goals.f}"></div>
           <div class="modal-actions">
-            <button class="cancel" onClick=${onCancel}>Cancel</button>
-            <button class="confirm" onClick=${() => { const f = parseFloat(v); if (!isNaN(f) && f > 0) onSave(f); }}>Save</button>
+            <button class="cancel">Cancel</button>
+            <button class="confirm">Save</button>
           </div>
         </div>
-      </div>`;
-    }
+      `;
+      document.body.appendChild(overlay);
 
-    /* ─────────────────────────────────────────────────────────────────
-       SETTINGS
-       ───────────────────────────────────────────────────────────────── */
-    function Settings() {
-      const s = useStore();
-      const [editing, setEditing] = useState(null);
-
-      const u = s.user;
-      const initial = (u.name || 'U').slice(0, 1).toUpperCase();
-      const subtitle = (u.currentWeight != null) ? `${u.currentWeight} ${u.weightUnit}` : 'Set your stats';
-
-      const goalRow = (label, key, unit, step, max = 10000) => {
-        const v = u[key] || 0;
-        return html`<div style="display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 0.5px solid var(--hairline);">
-          <div style="flex:1; font-size: 14px;">${label}</div>
-          <div style="font-family: ui-monospace, monospace; font-size: 13px; font-weight: 600; color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">${v}${unit}</div>
-          <div style="display:flex; align-items:center; gap: 0; height: 32px; background: rgba(0,0,0,0.4); border-radius: 16px; border: 0.5px solid var(--hairline2);">
-            <button style="width:32px;height:32px;background:transparent;border:none;color:var(--cyan);" onClick=${() => updateUser({ [key]: Math.max(0, v - step) })}><${Icon} name="minus" size=12 stroke=2/></button>
-            <div style="width:1px;height:16px;background:var(--hairline2);"></div>
-            <button style="width:32px;height:32px;background:transparent;border:none;color:var(--cyan);" onClick=${() => updateUser({ [key]: Math.min(max, v + step) })}><${Icon} name="plus" size=12 stroke=2/></button>
-          </div>
-        </div>`;
-      };
-
-      return html`<div class="screen">
-        <div style="padding: 14px 20px 6px;">
-          <div class="large-title">Settings</div>
-        </div>
-
-        <div style="margin: 0 16px 14px; padding: 16px; background: linear-gradient(135deg, var(--surface), var(--surface2)); border-radius: 20px; border: 0.5px solid var(--hairline2); display: flex; gap: 14px; align-items: center; box-shadow: 0 0 24px rgba(255,20,147,0.18);"
-             onClick=${() => setEditing('name')} class="clickable">
-          <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--g-neon); display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; box-shadow: 0 0 18px rgba(255,20,147,0.7), inset 0 0 0 2px rgba(255,255,255,0.3);">${initial}</div>
-          <div style="flex:1;">
-            <div style="font-size: 18px; font-weight: 700;">${u.name}</div>
-            <div class="num" style="font-size: 12px; color: var(--text-low); margin-top: 2px;">${subtitle}</div>
-          </div>
-          <button class="pill" style="color: var(--cyan); border-color: color-mix(in srgb, var(--cyan) 55%, transparent); background: color-mix(in srgb, var(--cyan) 12%, transparent);" onClick=${(e) => { e.stopPropagation(); setEditing('name'); }}>Edit</button>
-        </div>
-
-        <div class="glass" style="margin: 0 16px 14px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;">
-            <span class="sec-label" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">● DAILY GOALS</span>
-          </div>
-          ${goalRow('Calories', 'dailyCalorieGoal', ' kcal', 50)}
-          ${goalRow('Protein',  'proteinGoal', 'g', 5)}
-          ${goalRow('Carbs',    'carbsGoal', 'g', 5)}
-          ${goalRow('Fat',      'fatGoal', 'g', 5)}
-        </div>
-
-        <div style="padding: 0 20px 10px;">
-          <span class="sec-label" style="color: var(--purple); text-shadow: 0 0 6px rgba(176,0,255,0.6);">● BODY</span>
-        </div>
-        <div class="glass glass-flush" style="margin: 0 16px 14px;">
-          <div class="nav-cell" onClick=${() => setEditing('weight-log')}>
-            <div class="nav-cell-icon" style="background: color-mix(in srgb, var(--orange) 18%, transparent); border: 0.5px solid color-mix(in srgb, var(--orange) 45%, transparent); color: var(--orange); box-shadow: 0 0 8px color-mix(in srgb, var(--orange) 35%, transparent);">⚖</div>
-            <div class="title">Weight log</div>
-            <div class="detail">${u.currentWeight ? `${u.currentWeight} ${u.weightUnit}` : '—'}</div>
-            <${Icon} name="chev_r" size=12 color="var(--text-dim)"/>
-          </div>
-          <div class="nav-cell" onClick=${() => setEditing('target')}>
-            <div class="nav-cell-icon" style="background: color-mix(in srgb, var(--pink) 18%, transparent); border: 0.5px solid color-mix(in srgb, var(--pink) 45%, transparent); color: var(--pink); box-shadow: 0 0 8px color-mix(in srgb, var(--pink) 35%, transparent);">◆</div>
-            <div class="title">Target weight</div>
-            <div class="detail">${u.targetWeight ? `${u.targetWeight} ${u.weightUnit}` : '—'}</div>
-            <${Icon} name="chev_r" size=12 color="var(--text-dim)"/>
-          </div>
-        </div>
-
-        <div style="padding: 0 20px 10px;">
-          <span class="sec-label" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">● APP</span>
-        </div>
-        <div class="glass glass-flush" style="margin: 0 16px 14px;">
-          <div class="nav-cell">
-            <div class="nav-cell-icon" style="background: color-mix(in srgb, var(--cyan) 18%, transparent); border: 0.5px solid color-mix(in srgb, var(--cyan) 45%, transparent); color: var(--cyan);">⚖</div>
-            <div class="title">Weight unit</div>
-            <div style="display:flex; padding: 2px; background: rgba(0,0,0,0.4); border-radius: 14px; gap: 0;">
-              ${['lb','kg'].map(w => html`<button key=${w} style=${{
-                padding: '4px 14px', borderRadius: '12px', border: 'none',
-                background: u.weightUnit === w ? 'var(--cyan)' : 'transparent',
-                color: u.weightUnit === w ? 'black' : 'var(--text-mid)',
-                fontWeight: 600, fontSize: '12px',
-              }} onClick=${() => updateUser({ weightUnit: w })}>${w}</button>`)}
-            </div>
-          </div>
-          <div class="nav-cell" onClick=${() => { if (confirm('Reset all data? This cannot be undone.')) { localStorage.removeItem(STORAGE_KEY); location.reload(); } }}>
-            <div class="nav-cell-icon" style="background: color-mix(in srgb, var(--orange) 18%, transparent); border: 0.5px solid color-mix(in srgb, var(--orange) 45%, transparent); color: var(--orange);">↺</div>
-            <div class="title">Reset data</div>
-            <${Icon} name="chev_r" size=12 color="var(--text-dim)"/>
-          </div>
-          <div class="nav-cell">
-            <div class="nav-cell-icon" style="background: color-mix(in srgb, var(--purple) 18%, transparent); border: 0.5px solid color-mix(in srgb, var(--purple) 45%, transparent); color: var(--purple);">ⓘ</div>
-            <div class="title">About</div>
-            <div class="detail">v1.0 · PWA</div>
-          </div>
-        </div>
-
-        ${editing === 'name' && html`<${SimpleEditModal} title="Name" placeholder="Your name" initial=${u.name}
-          onCancel=${() => setEditing(null)}
-          onSave=${(v) => { updateUser({ name: v.trim() || 'You' }); setEditing(null); }}/>`}
-
-        ${editing === 'target' && html`<${SimpleEditModal} title="Target weight" placeholder=${`weight (${u.weightUnit})`} initial=${u.targetWeight ?? ''} numeric
-          onCancel=${() => setEditing(null)}
-          onSave=${(v) => { const n = parseFloat(v); updateUser({ targetWeight: isNaN(n) ? null : n }); setEditing(null); }}/>`}
-
-        ${editing === 'weight-log' && html`<${WeightLogModal} onClose=${() => setEditing(null)}/>`}
-      </div>`;
-    }
-
-    function SimpleEditModal({ title, placeholder, initial, numeric, onCancel, onSave }) {
-      const [v, setV] = useState(String(initial ?? ''));
-      return html`<div class="modal-backdrop" onClick=${onCancel}>
-        <div class="modal" onClick=${(e) => e.stopPropagation()}>
-          <h2>${title}</h2>
-          <input type=${numeric ? 'number' : 'text'} inputmode=${numeric ? 'decimal' : 'text'} placeholder=${placeholder} value=${v} onInput=${(e) => setV(e.target.value)} autofocus/>
-          <div class="modal-actions">
-            <button class="cancel" onClick=${onCancel}>Cancel</button>
-            <button class="confirm" onClick=${() => onSave(v)}>Save</button>
-          </div>
-        </div>
-      </div>`;
-    }
-
-    function WeightLogModal({ onClose }) {
-      const s = useStore();
-      const [showAdd, setShowAdd] = useState(false);
-      const entries = s.weights.slice().sort((a, b) => b.date.localeCompare(a.date));
-      return html`<div class="sheet-backdrop" onClick=${onClose}>
-        <div class="sheet" onClick=${(e) => e.stopPropagation()} style="top: 90px;">
-          <div class="drag-handle"></div>
-          <div style="padding: 6px 20px 14px; display: flex; align-items: center; justify-content: space-between;">
-            <div class="large-title" style="font-size: 24px;">Weight log</div>
-            <button class="date-pill" style="color: var(--cyan);" onClick=${() => setShowAdd(true)}><${Icon} name="plus" size=14/></button>
-          </div>
-          <div style="flex:1; overflow-y:auto; padding: 0 16px 30px;">
-            ${entries.length === 0
-              ? html`<div style="text-align:center; padding: 30px; color: var(--text-mid);">No weight entries yet.</div>`
-              : html`<div class="glass glass-flush">
-                  ${entries.map(e => html`<div class="meal-row" key=${e.id}>
-                    <div class="name" style="flex:1;">${new Date(e.date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-                    <div class="cal num">${e.weight.toFixed(1)} ${s.user.weightUnit}</div>
-                    <button style="background:transparent;border:none;color:var(--text-dim);margin-left:8px;" onClick=${() => deleteWeight(e.id)}><${Icon} name="trash" size=16/></button>
-                  </div>`)}
-                </div>`}
-          </div>
-          ${showAdd && html`<${WeightDialog} unit=${s.user.weightUnit}
-            onCancel=${() => setShowAdd(false)}
-            onSave=${(w) => { addWeight(w); setShowAdd(false); }}/>`}
-        </div>
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       ADD FOOD SHEET
-       ───────────────────────────────────────────────────────────────── */
-    function AddFoodSheet({ mealType, onClose, onOpenFood, onQuickAdd, onOpenScanner }) {
-      const s = useStore();
-      const [query, setQuery] = useState('');
-      const [tab, setTab] = useState('all');
-      const [usdaResults, setUsdaResults] = useState([]);
-      const [loading, setLoading] = useState(false);
-      const debounceRef = useRef(null);
-
-      useEffect(() => {
-        document.body.classList.add('no-scroll');
-        return () => document.body.classList.remove('no-scroll');
-      }, []);
-
-      useEffect(() => {
-        clearTimeout(debounceRef.current);
-        if (!query.trim()) { setUsdaResults([]); setLoading(false); return; }
-        debounceRef.current = setTimeout(async () => {
-          setLoading(true);
-          setUsdaResults(await searchUSDA(query, ['Branded','Foundation','SR Legacy'], 20));
-          setLoading(false);
-        }, 350);
-      }, [query]);
-
-      const logIndex = useMemo(() => buildLogIndex(s.meals), [s.meals]);
-      const curated = searchCurated(query).map(curatedToFood);
-      const recent = recentLogged(logIndex, 8).filter(it => !query.trim() || it.name.toLowerCase().includes(query.toLowerCase()));
-      const top = topLogged(logIndex, 8);
-
-      const sections = [];
-      if (query.trim()) {
-        if (curated.length) sections.push({ title: '★ Curated', color: 'var(--pink)', foods: curated });
-        if (recent.length) sections.push({ title: '↻ Your History', color: 'var(--cyan)', foods: recent.map(r => logEntryToFood(r.sample)) });
-        const branded = usdaResults.filter(f => f.dataType === 'Branded');
-        const foundation = usdaResults.filter(f => f.dataType !== 'Branded');
-        if (branded.length) sections.push({ title: 'Branded', color: 'var(--purple)', foods: branded });
-        if (foundation.length) sections.push({ title: 'USDA Foundation', color: 'var(--text-mid)', foods: foundation });
-      }
-
-      const meal = MEAL_BY_ID[mealType];
-
-      return html`<div class="sheet-backdrop" onClick=${onClose}>
-        <div class="sheet" onClick=${(e) => e.stopPropagation()}>
-          <div class="drag-handle"></div>
-          <div style="padding: 6px 20px 8px;">
-            <span class="sec-label" style=${{ color: meal.color, textShadow: `0 0 6px ${meal.color}` }}>● ADD TO ${meal.name.toUpperCase()}</span>
-            <div class="large-title" style="font-size: 26px; margin-top: 4px;">Find food</div>
-          </div>
-
-          <div style="padding: 6px 0;">
-            <div class="search-bar">
-              <${Icon} name="search" size=18 color="var(--cyan)"/>
-              <input value=${query} onInput=${(e) => setQuery(e.target.value)}
-                     placeholder="Search foods, brands, recipes…" type="search" enterkeyhint="search" autofocus/>
-              ${query && html`<button class="date-pill" style="width:28px;height:28px;background:transparent;border:none;color:var(--text-low);" onClick=${() => setQuery('')}><${Icon} name="x" size=14/></button>`}
-              <button class="barcode-btn" onClick=${onOpenScanner}><${Icon} name="barcode" size=18 color="var(--pink)"/></button>
-            </div>
-          </div>
-
-          <div class="pill-tabs">
-            ${[
-              { id: 'all',    label: 'All' },
-              { id: 'top',    label: 'Top' },
-              { id: 'recent', label: 'Recent' },
-            ].map(t => html`<button key=${t.id} class=${'pill-tab ' + (tab === t.id ? 'active' : '')} onClick=${() => setTab(t.id)}>${t.label}</button>`)}
-          </div>
-
-          <div style="flex:1; overflow-y:auto; padding-bottom: 20px;">
-            ${tab === 'all' && !query.trim() && html`<${EmptyAllState} top=${top} onOpen=${onOpenFood}/>`}
-            ${tab === 'all' && query.trim() && (sections.length > 0
-              ? sections.map(sec => html`<${ResultsSection} key=${sec.title} title=${sec.title} color=${sec.color} foods=${sec.foods} onOpen=${onOpenFood}/>`)
-              : (loading
-                  ? html`<div style="text-align:center;padding:32px;color:var(--text-mid);">Searching…</div>`
-                  : html`<div style="text-align:center;padding:32px;color:var(--text-mid);">No matches yet.</div>`))}
-            ${tab === 'top' && html`<${EmptyAllState} top=${top} onOpen=${onOpenFood}/>`}
-            ${tab === 'recent' && html`<div style="padding: 0 16px;">
-              ${recent.length === 0
-                ? html`<div style="text-align:center;padding:32px;color:var(--text-mid);">No recent foods yet.</div>`
-                : html`<div class="glass glass-flush">${recent.map(r => {
-                    const f = logEntryToFood(r.sample);
-                    return html`<${ResultRow} key=${r.name} food=${f} isApproved=${r.approved} isRecent onClick=${() => onOpenFood(f)}/>`;
-                  })}</div>`}
-            </div>`}
-          </div>
-        </div>
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       FOOD DETAIL SHEET
-       ───────────────────────────────────────────────────────────────── */
-    function FoodDetailSheet({ food, initialMeal, editing, onClose, onConfirm }) {
-      const [qty, setQty] = useState(editing?.qty ?? 1);
-      const [size, setSize] = useState(editing?.size ?? food.size ?? 100);
-      const [unit, setUnit] = useState(editing?.unit ?? food.unit ?? 'g');
-      const [meal, setMeal] = useState(editing?.mealType ?? initialMeal);
-      const [approved, setApproved] = useState(editing?.isApproved ?? false);
-
-      useEffect(() => {
-        document.body.classList.add('no-scroll');
-        return () => document.body.classList.remove('no-scroll');
-      }, []);
-
-      const m = scaledMacros(food, qty, size);
-      const tot = m.p + m.c + m.f;
-      const pPct = tot ? m.p / tot : 0.34;
-      const cPct = tot ? m.c / tot : 0.33;
-      const fPct = tot ? m.f / tot : 0.33;
-
-      return html`<div class="sheet-backdrop" onClick=${onClose}>
-        <div class="sheet" onClick=${(e) => e.stopPropagation()}>
-          <div class="drag-handle"></div>
-          <div style="flex:1; overflow-y:auto; padding-bottom: 100px;">
-            <div style="padding: 0 16px 14px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                ${food.brand && html`<span class="sec-label" style="color: var(--pink); text-shadow: 0 0 6px rgba(255,20,147,0.6);">${food.brand}</span>`}
-                ${approved && html`<${Fragment}><${PinkSeal} size=14/><span style="font-size: 11px; font-weight: 700; letter-spacing: 1px; color: var(--pink);">APPROVED</span></${Fragment}>`}
-              </div>
-              <div style="font-size: 26px; font-weight: 700; letter-spacing: -0.4px; margin-top: 8px;">${food.name}</div>
-              ${food.serving && html`<div style="font-size: 13px; color: var(--text-mid); margin-top: 4px;">Default: ${food.serving}</div>`}
-            </div>
-
-            <div class="glass" style="margin: 0 16px 14px;">
-              <span class="sec-label" style="color: var(--cyan); text-shadow: 0 0 6px rgba(0,229,255,0.6);">● SERVING</span>
-              <div style="display: flex; gap: 8px; margin-top: 12px;">
-                <div class="pill-field" style="flex: 1.4;">
-                  <div class="lbl">Qty</div>
-                  <input type="number" inputmode="decimal" value=${qty} onInput=${(e) => setQty(Math.max(0.1, parseFloat(e.target.value) || 0))}/>
-                </div>
-                <div class="pill-field">
-                  <div class="lbl">Size</div>
-                  <input type="number" inputmode="decimal" value=${size} onInput=${(e) => setSize(Math.max(0.1, parseFloat(e.target.value) || 0))}/>
-                </div>
-                <div class="pill-field" style="flex: 0.8;">
-                  <div class="lbl">Unit</div>
-                  <input value=${unit} onInput=${(e) => setUnit(e.target.value)}/>
-                </div>
-              </div>
-              <div style="display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap;">
-                ${[0.5, 1, 1.5, 2].map(q => html`<button key=${q} onClick=${() => setQty(q)} style=${{
-                  height: '26px', padding: '0 10px', borderRadius: '13px',
-                  background: qty === q ? 'color-mix(in srgb, var(--cyan) 25%, transparent)' : 'color-mix(in srgb, var(--cyan) 8%, transparent)',
-                  border: '0.5px solid color-mix(in srgb, var(--cyan) 55%, transparent)',
-                  color: 'var(--cyan)', fontWeight: 600, fontSize: '12px',
-                  fontFamily: 'ui-monospace, monospace',
-                }}>${q}×</button>`)}
-              </div>
-            </div>
-
-            <div class="glass" style="margin: 0 16px 14px;">
-              <div style="display: flex; gap: 14px; align-items: center;">
-                <${MacroDonut} p=${pPct} c=${cPct} f=${fPct}/>
-                <div style="flex:1;">
-                  <div style="font-size: 36px; font-weight: 700; letter-spacing: -0.6px; line-height: 1; text-shadow: 0 0 14px rgba(255,20,147,0.5);" class="num">${m.cal}</div>
-                  <div class="num" style="font-size: 11px; color: var(--text-low); margin-top: 4px; letter-spacing: 0.5px;">kcal · ${qty}× ${size}${unit}</div>
-                  <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
-                    <${MacroDot} color="var(--cyan)" label="P" grams=${m.p}/>
-                    <${MacroDot} color="var(--orange)" label="C" grams=${m.c}/>
-                    <${MacroDot} color="var(--purple)" label="F" grams=${m.f}/>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style="margin: 0 16px 14px;">
-              <button onClick=${() => setApproved(!approved)} style=${{
-                width: '100%', height: '44px', borderRadius: '14px', padding: '0 14px',
-                background: `color-mix(in srgb, var(--pink) ${approved ? 18 : 8}%, transparent)`,
-                border: `0.5px solid color-mix(in srgb, var(--pink) 50%, transparent)`,
-                display: 'flex', alignItems: 'center', gap: '8px',
-                boxShadow: '0 0 12px rgba(255,20,147,0.3)',
-                color: 'white', fontSize: '13px', fontWeight: 600,
-              }}>
-                <${PinkSeal} size=18/>
-                <span>Approved</span>
-                <span style="flex:1;"></span>
-                <div style=${{
-                  width: '44px', height: '26px', borderRadius: '13px',
-                  background: approved ? 'var(--g-neon)' : 'rgba(255,255,255,0.12)',
-                  position: 'relative', transition: 'background 0.2s',
-                  boxShadow: approved ? '0 0 14px rgba(255,20,147,0.7)' : 'none',
-                }}>
-                  <div style=${{
-                    position: 'absolute', top: '2px', left: approved ? '20px' : '2px',
-                    width: '22px', height: '22px', borderRadius: '50%', background: 'white',
-                    transition: 'left 0.2s',
-                  }}></div>
-                </div>
-              </button>
-            </div>
-
-            <div style="display: flex; gap: 8px; margin: 0 16px 14px;">
-              ${MEALS.map(M => html`<button key=${M.id} onClick=${() => { haptic('light'); setMeal(M.id); }} style=${{
-                flex: 1, height: '40px', borderRadius: '12px', padding: '0 8px',
-                background: meal === M.id ? `color-mix(in srgb, ${M.color} 22%, transparent)` : 'rgba(255,255,255,0.04)',
-                border: `0.5px solid ${meal === M.id ? M.color : 'var(--hairline2)'}`,
-                color: meal === M.id ? M.color : 'var(--text-mid)',
-                fontWeight: 600, fontSize: '12px', letterSpacing: '0.4px',
-                textShadow: meal === M.id ? `0 0 6px ${M.color}` : 'none',
-                boxShadow: meal === M.id ? `inset 0 0 12px color-mix(in srgb, ${M.color} 30%, transparent), 0 0 12px color-mix(in srgb, ${M.color} 30%, transparent)` : 'none',
-              }}>${M.name}</button>`)}
-            </div>
-          </div>
-
-          <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 16px calc(20px + var(--safe-bottom)); background: linear-gradient(0deg, var(--navy) 50%, transparent);">
-            <button class="neon-cta" onClick=${() => onConfirm(food, meal, qty, size, unit, approved)}>
-              <${Icon} name="check" size=18 color="white" stroke=2.5/>
-              Log to ${MEAL_BY_ID[meal].name} · ${m.cal} kcal
-            </button>
-          </div>
-        </div>
-      </div>`;
-    }
-
-    function MacroDonut({ p, c, f, size = 90 }) {
-      const stroke = 12, r = (size - stroke) / 2, C = 2 * Math.PI * r;
-      const seg = (frac, color, offset) => html`<circle cx=${size/2} cy=${size/2} r=${r}
-        fill="none" stroke=${color} stroke-width=${stroke}
-        stroke-dasharray=${`${C * frac} ${C}`} stroke-dashoffset=${-C * offset}
-        style=${{ filter: `drop-shadow(0 0 5px ${color})` }}/>`;
-      return html`<svg width=${size} height=${size} style="transform: rotate(-90deg);">
-        <circle cx=${size/2} cy=${size/2} r=${r} fill="none" stroke="rgba(255,255,255,0.05)" stroke-width=${stroke}/>
-        ${seg(p, 'var(--cyan)', 0)}
-        ${seg(c, 'var(--orange)', p)}
-        ${seg(f, 'var(--purple)', p + c)}
-      </svg>`;
-    }
-
-    function MacroDot({ color, label, grams }) {
-      return html`<span style="display: inline-flex; align-items: center; gap: 5px;">
-        <span style=${{ width: '8px', height: '8px', borderRadius: '50%', background: color, boxShadow: `0 0 4px ${color}` }}></span>
-        <span style=${{ fontSize: '11px', fontWeight: 700, color, letterSpacing: '1px' }}>${label}</span>
-        <span class="num" style="font-size: 12px; color: white; font-weight: 600;">${Math.round(grams)}g</span>
-      </span>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       BARCODE SCANNER (ZXing-js via CDN)
-       ───────────────────────────────────────────────────────────────── */
-    function BarcodeScanner({ onClose, onResult }) {
-      const videoRef = useRef(null);
-      const [error, setError] = useState(null);
-      const [showManual, setShowManual] = useState(false);
-      const [manual, setManual] = useState('');
-      const controlsRef = useRef(null);
-
-      useEffect(() => {
-        let cancelled = false;
-        let codeReader = null;
-
-        async function start() {
-          try {
-            // Dynamically import ZXing only when scanner opens (lazy load)
-            const ZXing = await import('https://esm.sh/@zxing/library@0.21.3');
-            if (cancelled) return;
-            const hints = new Map();
-            hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-              ZXing.BarcodeFormat.EAN_13, ZXing.BarcodeFormat.EAN_8,
-              ZXing.BarcodeFormat.UPC_A,  ZXing.BarcodeFormat.UPC_E,
-              ZXing.BarcodeFormat.CODE_128, ZXing.BarcodeFormat.CODE_39,
-            ]);
-            codeReader = new ZXing.BrowserMultiFormatReader(hints);
-            const devices = await codeReader.listVideoInputDevices();
-            // Prefer back camera
-            const back = devices.find(d => /back|rear|environment/i.test(d.label)) || devices[0];
-            if (!back) throw new Error('No camera found');
-            controlsRef.current = await codeReader.decodeFromVideoDevice(back.deviceId, videoRef.current, (result, err) => {
-              if (cancelled) return;
-              if (result) {
-                const code = result.getText();
-                haptic('success');
-                cancelled = true;
-                try { controlsRef.current?.stop?.(); } catch {}
-                codeReader.reset?.();
-                onResult(code);
-              }
-            });
-          } catch (e) {
-            console.error('scanner', e);
-            setError(e.message || 'Camera unavailable');
-          }
-        }
-
-        start();
-
-        return () => {
-          cancelled = true;
-          try { controlsRef.current?.stop?.(); } catch {}
-          try { codeReader?.reset?.(); } catch {}
-          // Hard-stop stream
-          const stream = videoRef.current?.srcObject;
-          if (stream) stream.getTracks().forEach(t => t.stop());
+      const close = () => overlay.remove();
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+      overlay.querySelector('.cancel').addEventListener('click', close);
+      overlay.querySelector('.confirm').addEventListener('click', () => {
+        state.goals = {
+          cal: parseFloat(overlay.querySelector('#g-cal').value) || 2400,
+          p:   parseFloat(overlay.querySelector('#g-p').value) || 0,
+          c:   parseFloat(overlay.querySelector('#g-c').value) || 0,
+          f:   parseFloat(overlay.querySelector('#g-f').value) || 0,
         };
-      }, []);
+        save(); render(); close(); vibrate(10);
+        showToast('Goals saved');
+      });
+    });
 
-      return html`<div class="scanner">
-        <video ref=${videoRef} playsinline autoplay muted></video>
-        <div class="frame">
-          <div class="corner tl"></div>
-          <div class="corner tr"></div>
-          <div class="corner bl"></div>
-          <div class="corner br"></div>
-          <div class="laser"></div>
-        </div>
-        <div class="scanner-controls">
-          <button class="scanner-pill" style="color: var(--cyan);" onClick=${onClose}>
-            <${Icon} name="chev_l" size=12 color="var(--cyan)"/> Cancel
-          </button>
-          <button class="scanner-pill" style="color: white;" onClick=${() => setShowManual(true)}>
-            <span style="width:8px;height:8px;border-radius:50%;background:var(--pink);box-shadow:0 0 4px var(--pink);"></span>
-            Type UPC
-          </button>
-        </div>
-        <div class="scanner-caption">
-          ${error
-            ? html`<${Fragment}>
-                <div class="title">Camera unavailable</div>
-                <div class="helper">${error}. Try "Type UPC" above.</div>
-              </${Fragment}>`
-            : html`<${Fragment}>
-                <div class="title">Aim at a barcode</div>
-                <div class="helper">Hold steady — we'll do the rest.</div>
-              </${Fragment}>`}
-        </div>
+    render();
+    clearFields();
 
-        ${showManual && html`<div class="modal-backdrop" onClick=${() => setShowManual(false)}>
-          <div class="modal" onClick=${(e) => e.stopPropagation()}>
-            <h2>Type UPC</h2>
-            <div class="body">Enter the numbers under the barcode.</div>
-            <input type="number" inputmode="numeric" placeholder="e.g. 0123456789012" value=${manual} onInput=${(e) => setManual(e.target.value)} autofocus/>
-            <div class="modal-actions">
-              <button class="cancel" onClick=${() => setShowManual(false)}>Cancel</button>
-              <button class="confirm" onClick=${() => { if (manual) onResult(manual); }}>Look up</button>
-            </div>
-          </div>
-        </div>`}
-      </div>`;
+    // Auto re-render at midnight so "Today" rolls over
+    function scheduleMidnight() {
+      const now = new Date();
+      const next = new Date(now);
+      next.setHours(24, 0, 5, 0); // 5s after midnight
+      const ms = next - now;
+      setTimeout(() => { render(); scheduleMidnight(); }, ms);
     }
+    scheduleMidnight();
 
-    /* ─────────────────────────────────────────────────────────────────
-       ROAD HOUSE celebration
-       ───────────────────────────────────────────────────────────────── */
-    function RoadHouseCelebration({ food }) {
-      return html`<div class="roadhouse">
-        <div class="stamp">APPROVED</div>
-        <div class="title">YEAH BUDDY!</div>
-        <div class="sub">● ● ●  ROAD HOUSE  ● ● ●</div>
-        ${food && html`<div style="margin-top: 18px; font-size: 13px; color: var(--text-mid);">${food.name}</div>`}
-      </div>`;
-    }
-
-    /* ─────────────────────────────────────────────────────────────────
-       BOOT
-       ───────────────────────────────────────────────────────────────── */
-    render(h(App), document.getElementById('root'));
-
-    // Service worker
+    // Service worker for installability
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js').catch(() => {});

@@ -1,5 +1,5 @@
 // Minimal service worker — caches the app shell for offline + installability.
-const CACHE = 'calorietracker-v2';
+const CACHE = 'calorietracker-v3-quick';
 const SHELL = [
   './',
   './index.html',

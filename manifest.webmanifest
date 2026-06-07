@@ -1,7 +1,7 @@
 {
-  "name": "CalorieTracker",
-  "short_name": "Tracker",
-  "description": "Miami Vice calorie + mobility tracker",
+  "name": "Quick Macros",
+  "short_name": "Macros",
+  "description": "Quick calorie + macro entry for the day",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",

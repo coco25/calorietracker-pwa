@@ -51,13 +51,28 @@
     }
 
     /* Header */
-    .header { margin-bottom: 18px; }
+    .header {
+      margin-bottom: 18px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .header .title-wrap { flex: 1; }
     .title { font-size: 30px; font-weight: 800; letter-spacing: -0.5px; }
     .date {
       font-size: 12px; font-weight: 700; letter-spacing: 2px; color: var(--cyan);
       text-shadow: 0 0 8px rgba(0,229,255,0.6);
       margin-top: 4px; text-transform: uppercase;
     }
+    .nav-btn {
+      width: 38px; height: 38px; border-radius: 50%;
+      background: rgba(255,255,255,0.06);
+      border: 0.5px solid var(--hairline2);
+      color: var(--cyan);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .nav-btn:active { background: rgba(0,229,255,0.15); }
+    .nav-btn:disabled { opacity: 0.3; }
 
     /* Totals */
     .totals {
@@ -290,8 +305,12 @@
 <body>
   <div class="app">
     <div class="header">
-      <div class="title">Today</div>
-      <div class="date" id="date"></div>
+      <button class="nav-btn" id="prev-btn" aria-label="Previous day">‹</button>
+      <div class="title-wrap" style="text-align: center;">
+        <div class="title" id="title">Today</div>
+        <div class="date" id="date"></div>
+      </div>
+      <button class="nav-btn" id="next-btn" aria-label="Next day">›</button>
     </div>
 
     <div class="totals">
@@ -343,7 +362,23 @@
     'use strict';
 
     const STORAGE = 'qm-pwa-v1';
-    const dayKey = (d = new Date()) => d.toISOString().slice(0, 10);
+    // Day key in LOCAL time (so midnight is local midnight, not UTC)
+    function dayKey(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+    function keyToDate(k) {
+      const [y, m, d] = k.split('-').map(Number);
+      return new Date(y, m - 1, d);
+    }
+    function shiftKey(k, deltaDays) {
+      const d = keyToDate(k);
+      d.setDate(d.getDate() + deltaDays);
+      return dayKey(d);
+    }
+    let selectedDay = dayKey();
 
     function loadState() {
       try {
@@ -372,14 +407,13 @@
       setTimeout(() => el.remove(), 2000);
     }
 
-    function todayEntries() {
-      const k = dayKey();
+    function entriesFor(k) {
       return state.entries.filter(e => e.day === k).sort((a, b) => b.ts - a.ts);
     }
 
-    function totalsForToday() {
+    function totalsFor(k) {
       let cal = 0, p = 0, c = 0, f = 0;
-      for (const e of todayEntries()) {
+      for (const e of entriesFor(k)) {
         cal += e.cal || 0; p += e.p || 0; c += e.c || 0; f += e.f || 0;
       }
       return { cal, p, c, f };
@@ -396,16 +430,30 @@
       return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
     }
 
-    function dateLabel() {
-      const d = new Date();
+    function dateLabel(d) {
       const w = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
       return `● ${w.toUpperCase()}`;
     }
 
-    function render() {
-      document.getElementById('date').textContent = dateLabel();
+    function titleFor(k) {
+      const t = dayKey();
+      if (k === t) return 'Today';
+      const y = shiftKey(t, -1);
+      if (k === y) return 'Yesterday';
+      const tom = shiftKey(t, 1);
+      if (k === tom) return 'Tomorrow';
+      const d = keyToDate(k);
+      return d.toLocaleDateString('en-US', { weekday: 'long' });
+    }
 
-      const t = totalsForToday();
+    function render() {
+      const d = keyToDate(selectedDay);
+      const today = dayKey();
+      document.getElementById('title').textContent = titleFor(selectedDay);
+      document.getElementById('date').textContent = dateLabel(d);
+      document.getElementById('next-btn').disabled = selectedDay >= today;
+
+      const t = totalsFor(selectedDay);
       document.getElementById('t-cal').textContent = Math.round(t.cal).toLocaleString();
       document.getElementById('t-p').textContent = fmt(t.p);
       document.getElementById('t-c').textContent = fmt(t.c);
@@ -418,14 +466,16 @@
       else if (remaining === 0) goalLine.textContent = `at goal (${g.cal.toLocaleString()})`;
       else goalLine.textContent = `${Math.abs(remaining).toLocaleString()} over goal (${g.cal.toLocaleString()})`;
 
-      const entries = todayEntries();
+      const entries = entriesFor(selectedDay);
       const list = document.getElementById('entries-list');
       list.innerHTML = '';
       document.getElementById('entry-count').textContent = entries.length
         ? `${entries.length} ${entries.length === 1 ? 'entry' : 'entries'}` : '';
 
       if (entries.length === 0) {
-        list.innerHTML = '<div class="empty">No entries yet. Log your first above.</div>';
+        list.innerHTML = '<div class="empty">' +
+          (selectedDay === today ? 'No entries yet. Log your first above.' : 'No entries on this day.') +
+          '</div>';
       } else {
         for (const e of entries) {
           const row = document.createElement('div');
@@ -479,10 +529,17 @@
       // Auto-compute calories from macros if cal=0 but macros present (4/4/9)
       const computedCal = cal > 0 ? cal : Math.round(p * 4 + c * 4 + f * 9);
 
+      // If logging on a past day, timestamp at noon of that day so order makes sense
+      let ts = Date.now();
+      if (selectedDay !== dayKey()) {
+        const d = keyToDate(selectedDay);
+        d.setHours(12, 0, 0, 0);
+        ts = d.getTime();
+      }
       const entry = {
         id: Math.random().toString(36).slice(2) + Date.now().toString(36),
-        day: dayKey(),
-        ts: Date.now(),
+        day: selectedDay,
+        ts,
         cal: computedCal, p, c, f,
       };
       state.entries.push(entry);
@@ -509,15 +566,55 @@
     document.getElementById('log-btn').addEventListener('click', logEntry);
 
     document.getElementById('reset-btn').addEventListener('click', () => {
-      const count = todayEntries().length;
+      const count = entriesFor(selectedDay).length;
+      const label = titleFor(selectedDay).toLowerCase();
       if (count === 0) { showToast('Nothing to clear'); return; }
-      if (confirm(`Clear ${count} ${count === 1 ? 'entry' : 'entries'} from today?`)) {
-        const k = dayKey();
-        state.entries = state.entries.filter(e => e.day !== k);
+      if (confirm(`Clear ${count} ${count === 1 ? 'entry' : 'entries'} from ${label}?`)) {
+        state.entries = state.entries.filter(e => e.day !== selectedDay);
         save(); render(); vibrate(20);
         showToast('Day cleared');
       }
     });
+
+    // Date navigation
+    document.getElementById('prev-btn').addEventListener('click', () => {
+      selectedDay = shiftKey(selectedDay, -1);
+      vibrate(8); render();
+    });
+    document.getElementById('next-btn').addEventListener('click', () => {
+      if (selectedDay >= dayKey()) return;
+      selectedDay = shiftKey(selectedDay, 1);
+      vibrate(8); render();
+    });
+    // Tap the title to jump to today
+    document.getElementById('title').addEventListener('click', () => {
+      if (selectedDay !== dayKey()) {
+        selectedDay = dayKey();
+        vibrate(8); render();
+      }
+    });
+
+    // Swipe left/right on the totals card to navigate days
+    (function() {
+      const el = document.querySelector('.totals');
+      let startX = 0, startY = 0;
+      el.addEventListener('touchstart', (e) => {
+        const t = e.touches[0]; startX = t.clientX; startY = t.clientY;
+      }, { passive: true });
+      el.addEventListener('touchend', (e) => {
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX, dy = t.clientY - startY;
+        if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+        if (dx > 0) {
+          // swipe right → previous day
+          selectedDay = shiftKey(selectedDay, -1);
+        } else {
+          if (selectedDay >= dayKey()) return;
+          selectedDay = shiftKey(selectedDay, 1);
+        }
+        vibrate(8); render();
+      }, { passive: true });
+    })();
 
     // Goals modal
     document.getElementById('goals-btn').addEventListener('click', () => {
@@ -556,15 +653,25 @@
     render();
     clearFields();
 
-    // Auto re-render at midnight so "Today" rolls over
+    // Auto re-render at midnight so "Today" rolls over and date nav updates
     function scheduleMidnight() {
       const now = new Date();
       const next = new Date(now);
       next.setHours(24, 0, 5, 0); // 5s after midnight
       const ms = next - now;
-      setTimeout(() => { render(); scheduleMidnight(); }, ms);
+      setTimeout(() => {
+        // If user is viewing "today", roll them forward to the new today
+        if (selectedDay === dayKey(new Date(now))) selectedDay = dayKey();
+        render();
+        scheduleMidnight();
+      }, ms);
     }
     scheduleMidnight();
+
+    // Also re-check on visibility change in case the app was backgrounded across midnight
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) render();
+    });
 
     // Service worker for installability
     if ('serviceWorker' in navigator) {
